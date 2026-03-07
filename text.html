@@ -1,20 +1,32 @@
-// ...[existing content before the changes]...
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Truck Simulator App</title>
+    <script>
+        function edDrawSign() {
+            // Original code...
+            edCtx.fillStyle = "#aaa";
+            edCtx.fillRect(-3, 0, 6, ph);
+            // Removed the line for improvements
+        }
 
-// Replacement for roadW and building dimensions
-roadW:220,building:{x:0,y:0,w:2280,h:1680},lot:{x:0,y:0,w:0,h:0},
-
-// Function: edDrawSign
-function edDrawSign() {
-    // ...[existing content above the changes]...
-    const sw=SIGN_W*edScale,sh=SIGN_H*edScale;
-    // ...[remaining content]...
-}
-
-// Function: drawSignBoard
-function drawSignBoard() {
-    // ...[existing content above the changes]...
-    // Removed pole lines
-    // ...[remaining content]...
-}
-
-// ...[existing content after the changes]...
+        function drawSignBoard() {
+            // Original code...
+            x.fillStyle = "#aaa";
+            x.fillRect(-5, 0, 10, SIGN_POLE_H);
+            x.fillStyle = "#888";
+            x.fillRect(-2, 0, 4, SIGN_POLE_H);
+            // Removed the lines for improvements
+        }
+    </script>
+</head>
+<body>
+    <!-- Body content -->
+    <div id="map" style="width:100%; height:100%;">
+        <canvas id="canvas" width="800" height="600"></canvas>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
