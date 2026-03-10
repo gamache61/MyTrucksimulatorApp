@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Air Brake Master: Study & Test</title>
+  <style>
+    :root{
+      --bg:#141414;
+      --card:#242424;
+      --card2:#2d2d2d;
+      --primary:#e67e22;
+      --accent:#3498db;
+      --success:#27ae60;
+      --danger:#c0392b;
+      --text:#eee;
+      --muted:#b8b8b8;
+      --line: rgba(255,255,255,0.10);
+    }
+    *{box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif;}
+    body{background:var(--bg);color:var(--text);margin:0;padding:0;}
+    .container{max-width:980px;margin:auto;padding:14px 14px 30px;}
+
+    h1{margin:0 0 4px 0;font-size:20px;}
+    .sub{color:var(--muted);margin:0 0 10px 0;line-height:1.35;font-size:13px;}
+
+    /* ── Module Nav ── */
+    .moduleNavTop{
+      display:flex;gap:6px;justify-content:space-between;align-items:center;
+      padding:6px 14px;
+      background:rgba(10,10,10,0.95);
+      border-bottom:1px solid rgba(255,255,255,0.12);
+      position:sticky;top:0;z-index:50;
+    }
+    .moduleNavTop .left,.moduleNavTop .right{display:flex;gap:6px;align-items:center;}
+    .moduleNavTop a,.moduleNavTop button{
+      border-radius:8px;border:1px solid rgba(255,255,255,0.18);
+      background:rgba(255,255,255,0.07);color:#fff;
+      padding:7px 12px;font-weight:900;font-size:11px;
+      cursor:pointer;text-decoration:none;user-select:none;white-space:nowrap;
+      transition:.15s;
+    }
+    .moduleNavTop a:active,.moduleNavTop button:active{transform:scale(.97);}
+    .moduleNavTop .title{
+      color:rgba(255,255,255,0.80);font-weight:900;font-size:11px;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .moduleNavTop button:disabled{opacity:.4;cursor:not-allowed;}
+
+    /* Navigation */
+    .nav{display:flex;gap:8px;margin:12px 0 14px;flex-wrap:wrap;}
+    .nav-btn{
+      flex:1 1 180px;padding:12px 10px;border:none;border-radius:10px;
+      cursor:pointer;background:var(--card);color:white;font-weight:900;
+      letter-spacing:.2px;transition:.2s;border:1px solid var(--line);font-size:13px;
+    }
+    .nav-btn.active{background:var(--primary);}
+
+    /* Sections */
+    .section{
+      display:none;background:linear-gradient(180deg,var(--card2),var(--card));
+      padding:16px;border-radius:12px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.55);border:1px solid var(--line);
+    }
+    .section.active{display:block;}
+
+    /* Controls row */
+    .row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 12px;}
+    .pill{
+      background:#1d1d1d;border:1px solid var(--line);border-radius:999px;
+      padding:7px 10px;color:var(--muted);display:flex;align-items:center;
+      gap:8px;flex:1 1 200px;min-width:180px;
+    }
+    .pill b{color:var(--text);}
+    select,input[type="search"]{
+      width:100%;padding:9px 10px;border-radius:8px;
+      border:1px solid var(--line);background:#1c1c1c;color:var(--text);outline:none;font-size:13px;
+    }
+
+    /* Component cards */
+    .grid{display:grid;grid-template-columns:1fr;gap:8px;}
+    @media(min-width:780px){.grid{grid-template-columns:1fr 1fr;}}
+
+    .part-item{
+      border-left:4px solid var(--accent);padding:12px 12px 10px;
+      background:#2a2a2a;border-radius:8px;border:1px solid var(--line);
+    }
+    .part-item h3{margin:0 0 5px 0;color:var(--accent);font-size:1rem;}
+    .part-item p{margin:0 0 6px 0;color:#e8e8e8;line-height:1.35;font-size:13px;}
+    .bullets{margin:0;padding-left:16px;color:#e8e8e8;font-size:13px;}
+    .bullets li{margin:5px 0;}
+    .inspection{color:var(--success);font-size:0.9rem;margin-top:8px;font-style:italic;line-height:1.25;}
+    .tagrow{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;}
+    .tag{
+      display:inline-block;padding:2px 9px;border-radius:999px;
+      border:1px solid var(--line);background:#1f1f1f;color:var(--muted);
+      font-weight:900;font-size:11px;letter-spacing:.2px;
+    }
+
+    /* Quiz */
+    .quizWrap{border:1px solid var(--line);border-radius:12px;background:#202020;padding:14px;}
+    .quizTop{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;}
+    .stat{color:var(--muted);font-weight:900;font-size:13px;}
+    .bar{height:9px;border-radius:999px;background:#121212;border:1px solid var(--line);overflow:hidden;flex:1 1 200px;}
+    .bar>div{height:100%;background:var(--primary);width:0%;}
+    .question{font-size:1.1rem;margin:12px 0 10px;font-weight:900;line-height:1.25;}
+    .option{
+      display:block;background:#2c2c2c;padding:11px 12px;margin:7px 0;border-radius:8px;
+      cursor:pointer;border:1px solid rgba(255,255,255,0.08);transition:.15s;user-select:none;font-size:13px;
+    }
+    .option:hover{background:#343434;}
+    .correct{background:var(--success)!important;}
+    .wrong{background:var(--danger)!important;}
+
+    /* Results */
+    #score-screen{text-align:center;}
+    .final-score{font-size:2.8rem;color:var(--primary);margin:12px 0;}
+    button.action-btn{
+      background:var(--primary);color:white;border:none;
+      padding:12px 16px;border-radius:9px;cursor:pointer;font-size:1rem;
+      width:100%;font-weight:900;letter-spacing:.2px;margin-top:8px;
+    }
+    button.action-btn.secondary{background:#2c2c2c;border:1px solid var(--line);}
+
+    /* ── NEXT button shown on score screen ── */
+    button.action-btn.nextBtn{
+      background:linear-gradient(135deg,#1a6b3a,#27ae60);
+      border:2px solid #27ae60;
+      font-size:1.1rem;margin-top:14px;
+    }
+
+    /* Scenario */
+    .scenarioCard{border:1px solid var(--line);border-radius:12px;background:#202020;padding:14px;}
+    .scenarioTitle{font-weight:900;font-size:1rem;margin:0 0 7px 0;}
+    .scenarioText{color:#e8e8e8;line-height:1.35;margin:0 0 10px 0;font-size:13px;}
+    .small{color:var(--muted);font-size:12px;line-height:1.25;}
+
+    .footerNote{margin-top:12px;color:var(--muted);font-size:12px;line-height:1.35;}
+  </style>
+</head>
+<body>
+
+<!-- MODULE NAV -->
+<div class="moduleNavTop">
+  <div class="left">
+    <a href="index.html">HOME</a>
+    <span class="title">Components & Test</span>
+  </div>
+  <div class="right">
+    <button onclick="location.href='airbrake.html'">◀ PREV</button>
+    <button onclick="location.href='pretrip.html'">NEXT ▶</button>
+  </div>
+</div>
+
+<div class="container">
+  <h1>Air Brake Certification — Study & Test</h1>
+  <p class="sub">
+    Study the complete system: compressor, governor, air dryer, tanks, air lines, glad hands, tractor protection valve,
+    service & supply lines, relay valves, foot valve, chambers, slack adjusters, S-cams, drums/linings, ABS, and pre‑trip tests.
+    <br><b>Practice aid only.</b> Specs vary by jurisdiction and vehicle.
+  </p>
+
+  <div class="nav">
+    <button class="nav-btn active" id="btn-study"     onclick="showSection('study')">1) Study Components</button>
+    <button class="nav-btn"        id="btn-tests"     onclick="showSection('tests')">2) Tests & Procedures</button>
+    <button class="nav-btn"        id="btn-test"      onclick="showSection('test')">3) Take the Quiz</button>
+    <button class="nav-btn"        id="btn-scenarios" onclick="showSection('scenarios')">4) Scenario Trainer</button>
+  </div>
+
+  <!-- STUDY -->
+  <div id="study" class="section active">
+    <h2>Component Encyclopedia</h2>
+    <p class="sub" style="margin-top:4px;">Use search + category filter to focus on what you're learning.</p>
+    <div class="row">
+      <div class="pill">
+        <b>Category</b>
+        <select id="categorySel" onchange="renderParts()">
+          <option value="all">All</option>
+          <option value="supply">Air Supply</option>
+          <option value="control">Control Valves</option>
+          <option value="foundation">Foundation Brakes</option>
+          <option value="trailer">Trailer Connections</option>
+          <option value="warnings">Warnings / Safety</option>
+        </select>
+      </div>
+      <div class="pill">
+        <b>Search</b>
+        <input id="searchBox" type="search" placeholder="Try: glad hands, relay, slack, spring brake…" oninput="renderParts()" />
+      </div>
+    </div>
+    <div class="grid" id="partsGrid"></div>
+    <div class="footerNote">
+      Tip: During pre‑trip, you're usually graded on: <b>condition</b> (cracked, loose, missing, leaking),
+      <b>secure mounting</b>, and whether it's <b>properly connected</b>.
+    </div>
+  </div>
+
+  <!-- TESTS & PROCEDURES -->
+  <div id="tests" class="section">
+    <h2>Air Brake Tests & Procedures</h2>
+    <div class="scenarioCard" style="margin-bottom:10px;">
+      <div class="scenarioTitle">A) Air Pressure Build Test</div>
+      <p class="scenarioText">Start engine, build air to governor cut‑out. Watch dual gauges rise (primary/secondary). Cut-out commonly around 120–135 PSI.</p>
+      <ul class="bullets"><li>At cut‑out you may hear the air dryer <b>purge</b>.</li><li>If pressure won't build: check compressor, governor, leaks, or frozen moisture.</li></ul>
+    </div>
+    <div class="scenarioCard" style="margin-bottom:10px;">
+      <div class="scenarioTitle">B) Applied Leakage Test (60 seconds)</div>
+      <p class="scenarioText">Engine off, service brake applied and held for <b>60 seconds</b>. Pressure drop must be within limits.</p>
+      <ul class="bullets"><li>Listen for leaks at valves, lines, chambers, fittings, glad hands.</li><li>Leak limits differ (single vs combination vehicle).</li></ul>
+    </div>
+    <div class="scenarioCard" style="margin-bottom:10px;">
+      <div class="scenarioTitle">C) Low Air Warning Test</div>
+      <p class="scenarioText">Fan off air until warning activates (commonly around <b>~60 PSI</b>).</p>
+      <ul class="bullets"><li>Warning can be light, buzzer, or both.</li><li>Must activate before pressure gets too low.</li></ul>
+    </div>
+    <div class="scenarioCard">
+      <div class="scenarioTitle">D) Spring Brake Pop‑Out / Emergency Brake Test</div>
+      <p class="scenarioText">Continue fanning until spring brakes apply / knobs pop out (commonly <b>~20–45 PSI</b>).</p>
+      <ul class="bullets"><li>Know what <b>yellow</b> (park) and <b>red</b> (trailer supply) controls do.</li><li>Never drive with spring brakes applied.</li></ul>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="test" class="section">
+    <h2>Knowledge Quiz</h2>
+    <p class="sub" style="margin-top:4px;">Mixed questions on components, inspections, and test steps.</p>
+    <div class="quizWrap">
+      <div class="quizTop">
+        <div class="stat">Question: <span id="qNum">0</span>/<span id="qTotal">0</span></div>
+        <div class="bar" aria-label="progress"><div id="progressFill"></div></div>
+        <div class="stat">Score: <span id="scoreLive">0</span></div>
+      </div>
+      <div id="quiz-game">
+        <div class="question" id="q-text">Ready to start?</div>
+        <div id="options-box"></div>
+        <button class="action-btn secondary" onclick="startQuiz()">Restart Quiz</button>
+      </div>
+      <div id="score-screen" style="display:none;">
+        <h2>Test Complete!</h2>
+        <div class="final-score"><span id="score-val">0</span>/<span id="score-total">0</span></div>
+        <p id="feedback-msg"></p>
+        <button class="action-btn" onclick="startQuiz()">Retake Quiz</button>
+        <button class="action-btn secondary" onclick="showSection('study')">Back to Study</button>
+        <button class="action-btn nextBtn" onclick="location.href='pretrip.html'">Next Module: Pre-Trip ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENARIOS -->
+  <div id="scenarios" class="section">
+    <h2>Scenario Trainer</h2>
+    <p class="sub" style="margin-top:4px;">Read the scenario and answer what you would inspect or what the likely issue is.</p>
+    <div class="scenarioCard" id="scenarioCard">
+      <div class="scenarioTitle" id="scTitle">Scenario 1</div>
+      <p class="scenarioText" id="scText"></p>
+      <div id="scOptions"></div>
+      <div class="small" id="scExplain" style="margin-top:8px;"></div>
+      <div class="row" style="margin-top:10px;">
+        <button class="action-btn" onclick="nextScenario()">Next Scenario ▶</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── PARTS DATA ── */
+const PARTS=[
+  {cat:"supply",title:"Air Compressor",desc:"Engine-driven pump that supplies compressed air to the system.",bullets:["Driven by gears or belt.","Supplies air to tanks via governor/unloader.","Failure causes slow/no build; may overheat."],inspect:"✔ Check: Secure mount, no leaks. Air should build to cut-out in a reasonable time.",tags:["build rate","leaks","secure"]},
+  {cat:"supply",title:"Governor (Unloader Control)",desc:"Controls compressor cut-in and cut-out pressures.",bullets:["Cut-in commonly ~85–100 PSI.","Cut-out commonly ~120–135 PSI.","Often triggers air dryer purge at cut-out."],inspect:"✔ Check: Must cut-out in specified range.",tags:["cut-in","cut-out","purge"]},
+  {cat:"supply",title:"Air Dryer",desc:"Removes moisture and oil vapor to protect valves and prevent freezing.",bullets:["Purge cycle often heard at governor cut-out.","Frozen moisture can block lines/valves.","Desiccant cartridges require maintenance."],inspect:"✔ Check: Listen for purge; check for leaks and secure mounting.",tags:["moisture","purge","winter"]},
+  {cat:"supply",title:"Air Tanks / Reservoirs",desc:"Store compressed air for service and parking/emergency braking.",bullets:["Manual or automatic drains remove moisture/oil.","Check valves protect one system from draining the other."],inspect:"✔ Check: Secure straps, no leaks, drain moisture as required.",tags:["drain","check valve","reservoir"]},
+  {cat:"warnings",title:"Safety Valve",desc:"Pressure relief valve to prevent over-pressurization.",bullets:["Typically pops ~150 PSI (varies).","Protects tanks if governor fails."],inspect:"✔ Check: No leaks; do not tamper.",tags:["150 psi","relief"]},
+  {cat:"control",title:"Foot Valve (Treadle Valve)",desc:"Driver-controlled valve that meters air pressure to service brakes.",bullets:["More pedal force = more air pressure to chambers.","Used for applied leak test (hold 60 seconds)."],inspect:"✔ Check: Smooth operation; listen for leaks when applied/released.",tags:["treadle","applied leak"]},
+  {cat:"control",title:"Relay Valve",desc:"Speeds application/release by placing a valve close to the brake chambers.",bullets:["Reduces brake lag time on long vehicles.","Common on drive axles and trailers."],inspect:"✔ Check: No audible leaks at valve body/fittings.",tags:["lag","fittings"]},
+  {cat:"control",title:"Tractor Protection Valve",desc:"Protects tractor air if trailer separates or there is a major trailer leak.",bullets:["May close automatically at low pressure.","Works with trailer supply (red) control."],inspect:"✔ Check: System responds correctly; no leaks at connections.",tags:["protection","red knob"]},
+  {cat:"trailer",title:"Glad Hands (Service & Supply)",desc:"Couplers connecting tractor and trailer air lines (blue service, red supply).",bullets:["Gaskets must be present and not torn.","Couplers should lock securely.","Crossed lines can cause abnormal brake behavior."],inspect:"✔ Check: Secure, no leaks, proper color/labeling, good seals.",tags:["gaskets","service line","supply line"]},
+  {cat:"trailer",title:"Service Line (Blue)",desc:"Carries modulated service brake signal from tractor to trailer.",bullets:["Controls trailer service brakes when pedal is pressed."],inspect:"✔ Check: No chafing/cracks; secure routing; glad hands sealed.",tags:["blue","signal"]},
+  {cat:"trailer",title:"Supply/Emergency Line (Red)",desc:"Supplies air to trailer reservoirs and controls trailer emergency function.",bullets:["Charges trailer air tanks.","Loss of supply can apply trailer spring brakes."],inspect:"✔ Check: No leaks; secure; glad hand gasket.",tags:["red","trailer tanks"]},
+  {cat:"foundation",title:"Brake Chambers (Service)",desc:"Converts air pressure into pushrod force to apply brakes.",bullets:["Diaphragm can leak or rupture.","Pushrod travel indicates adjustment condition."],inspect:"✔ Check: Secure mounting, no damage, no audible leaks when applied.",tags:["pushrod","diaphragm"]},
+  {cat:"foundation",title:"Spring Brake Chamber (Parking/Emergency)",desc:"Uses a powerful spring for parking & emergency braking.",bullets:["Spring applies brakes when air is released/lost.","Caging bolt used for emergency release (trained personnel)."],inspect:"✔ Check: Secure, no damage/leaks; never drive with spring brakes applied.",tags:["parking","emergency","caging"]},
+  {cat:"foundation",title:"Slack Adjuster",desc:"Transfers pushrod travel into S-cam rotation.",bullets:["Automatic slacks should maintain adjustment.","Out-of-adjustment brakes reduce stopping power."],inspect:"✔ Check: Free play/pushrod travel per course spec; hardware secure.",tags:["adjustment","OOS"]},
+  {cat:"foundation",title:"S-Cam / Drums / Linings",desc:"Mechanical components that create friction to stop the vehicle.",bullets:["Check lining thickness, cracks, contamination.","Look for missing hardware, broken springs, heat damage."],inspect:"✔ Check: No cracks, no missing parts, proper thickness and secure hardware.",tags:["drum","lining","hardware"]},
+  {cat:"warnings",title:"Low Air Warning (Light/Buzzer)",desc:"Warns driver when system pressure is getting dangerously low.",bullets:["Often ~60 PSI (varies).","Must function before pressure becomes unsafe."],inspect:"✔ Check: Activates during fan-down test before very low pressure.",tags:["60 psi","buzzer"]},
+  {cat:"warnings",title:"ABS (Anti-lock Braking System)",desc:"Helps prevent wheel lockup by modulating brake pressure.",bullets:["ABS light self-check may come on then go out.","Helps maintain steering control during hard braking."],inspect:"✔ Check: ABS lamp behavior per vehicle; sensors/wiring secure.",tags:["ABS light","control"]},
+];
+
+function escapeHtml(s){return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");}
+
+function renderParts(){
+  const cat=document.getElementById("categorySel").value;
+  const q=document.getElementById("searchBox").value.trim().toLowerCase();
+  const filtered=PARTS.filter(p=>{
+    if(cat!=="all"&&p.cat!==cat)return false;
+    if(!q)return true;
+    const hay=(p.title+" "+p.desc+" "+(p.bullets||[]).join(" ")+" "+(p.tags||[]).join(" ")).toLowerCase();
+    return hay.includes(q);
+  });
+  const grid=document.getElementById("partsGrid");
+  grid.innerHTML=filtered.map(p=>`
+    <div class="part-item">
+      <h3>${escapeHtml(p.title)}</h3>
+      <p>${escapeHtml(p.desc)}</p>
+      <ul class="bullets">${(p.bullets||[]).map(b=>`<li>${escapeHtml(b)}</li>`).join("")}</ul>
+      <div class="inspection">${escapeHtml(p.inspect||"")}</div>
+      <div class="tagrow">${(p.tags||[]).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>
+    </div>
+  `).join("");
+  if(!filtered.length)grid.innerHTML=`<div class="part-item"><h3>No matches</h3><p>Try a different search or choose "All".</p></div>`;
+}
+
+/* ── QUIZ ── */
+const questions=[
+  {q:"What pressure should the low air warning typically activate near?",options:["40 PSI","60 PSI","80 PSI","100 PSI"],correct:1,explain:"Many courses teach ~60 PSI (varies)."},
+  {q:"If the governor fails to cut out, what commonly prevents tank over‑pressure?",options:["ABS module","Safety valve (~150 PSI)","Slack adjuster","Foot valve"],correct:1,explain:"Safety valve protects the system if governor fails."},
+  {q:"How often should air tanks be drained (typical pre‑trip teaching)?",options:["Weekly","Daily","Monthly","Every 10,000 miles"],correct:1,explain:"Moisture/oil collects; draining helps prevent freezing/corrosion."},
+  {q:"What is the purpose of the air dryer?",options:["Increase horsepower","Remove moisture/oil from air","Measure PSI","Apply service brakes"],correct:1,explain:"Dry air protects components and prevents freezing."},
+  {q:"Glad hands should be checked for:",options:["Low tire tread","Missing gaskets / leaks / secure lock","Coolant level","Headlight aim"],correct:1,explain:"Coupler gaskets and secure connection are critical."},
+  {q:"The blue line at the trailer is usually the:",options:["Supply/emergency line","Service line","Coolant line","Hydraulic line"],correct:1,explain:"Blue is typically service; red is supply."},
+  {q:"Relay valves are used mainly to:",options:["Slow braking","Speed brake application/release","Drain tanks","Change gear ratios"],correct:1,explain:"They reduce lag by being closer to chambers."},
+  {q:"Spring brakes are primarily used for:",options:["Normal braking only","Parking & emergency braking","ABS only","Cooling drums"],correct:1,explain:"Spring brakes apply when air is released/lost."},
+  {q:"Out-of-adjustment brakes can cause:",options:["More stopping power","Reduced stopping power and possible OOS","Higher fuel economy","Less heat"],correct:1,explain:"Too much pushrod travel reduces braking effectiveness."},
+  {q:"During the 60-second applied leakage test, you:",options:["Keep engine running","Hold service brake applied with engine off","Release all brakes","Floor the accelerator"],correct:1,explain:"Engine off + service applied is the classic applied leak test."},
+];
+
+let currentIdx=0,score=0,locked=false;
+
+function startQuiz(){
+  currentIdx=0;score=0;locked=false;
+  document.getElementById('quiz-game').style.display='block';
+  document.getElementById('score-screen').style.display='none';
+  document.getElementById('qTotal').innerText=questions.length;
+  document.getElementById('score-total').innerText=questions.length;
+  loadQuestion();
+}
+function loadQuestion(){
+  locked=false;
+  const q=questions[currentIdx];
+  document.getElementById('q-text').innerText=q.q;
+  document.getElementById('qNum').innerText=(currentIdx+1);
+  document.getElementById('scoreLive').innerText=score;
+  document.getElementById('progressFill').style.width=`${Math.round((currentIdx/questions.length)*100)}%`;
+  const box=document.getElementById('options-box');
+  box.innerHTML='';
+  q.options.forEach((opt,i)=>{
+    const div=document.createElement('div');
+    div.className='option';div.innerText=opt;
+    div.onclick=()=>selectAnswer(i,div);
+    box.appendChild(div);
+  });
+}
+function selectAnswer(i,el){
+  if(locked)return;locked=true;
+  const q=questions[currentIdx],correct=q.correct;
+  const opts=document.querySelectorAll('.option');
+  opts.forEach(o=>o.style.pointerEvents='none');
+  if(i===correct){el.classList.add('correct');score++;}
+  else{el.classList.add('wrong');opts[correct].classList.add('correct');}
+  setTimeout(()=>{currentIdx++;if(currentIdx<questions.length)loadQuestion();else finishQuiz();},1100);
+}
+function finishQuiz(){
+  document.getElementById('quiz-game').style.display='none';
+  document.getElementById('score-screen').style.display='block';
+  document.getElementById('score-val').innerText=score;
+  document.getElementById('progressFill').style.width='100%';
+  document.getElementById('feedback-msg').innerText=
+    score>=Math.ceil(questions.length*0.8)?"Great job! You're in strong shape for the air brake portion.":
+    score>=Math.ceil(questions.length*0.6)?"Not bad. Review missed topics and try again.":
+    "Keep studying components and test steps, then retake the quiz.";
+}
+
+/* ── SCENARIOS ── */
+const scenarios=[
+  {title:"Scenario 1 — Trailer brakes apply unexpectedly",text:"You connect to a trailer. When you release the parking brake, the trailer brakes stay applied and you hear air leaking near the couplers.",options:["Check glad hand gaskets and secure coupling","Adjust slack adjusters immediately","Replace ABS module","Drain coolant"],correct:0,explain:"Glad hand gaskets/coupling leaks are a common cause of trailer supply issues."},
+  {title:"Scenario 2 — Slow air build",text:"Engine running but air pressure rises very slowly and never reaches cut-out. You hear constant hissing near a rear axle.",options:["Likely leak at air line/relay valve/chamber fittings","Normal operation, keep driving","ABS failure only","Too much tire pressure"],correct:0,explain:"A significant leak downstream prevents pressure build and is often audible."},
+  {title:"Scenario 3 — No purge sound",text:"System reaches about 120 PSI but you never hear an air dryer purge. In cold weather, brakes feel sluggish.",options:["Air dryer may be faulty or moisture may be freezing in system","That's normal for all trucks","Slack adjusters are the only cause","Glow plugs are bad"],correct:0,explain:"Dryer issues and moisture/freezing are classic winter air brake problems."},
+  {title:"Scenario 4 — Excess pushrod travel",text:"During inspection you measure excessive pushrod stroke on one wheel end. Braking feels uneven.",options:["Brake out of adjustment / possible automatic slack problem","Governor failed","Glad hands crossed","Air tank overfilled"],correct:0,explain:"Excess travel means poor adjustment or mechanical issue — can be out-of-service."},
+];
+let scIndex=0;
+function renderScenario(){
+  const sc=scenarios[scIndex];
+  document.getElementById("scTitle").innerText=sc.title;
+  document.getElementById("scText").innerText=sc.text;
+  document.getElementById("scExplain").innerText="";
+  const box=document.getElementById("scOptions");box.innerHTML="";
+  sc.options.forEach((opt,i)=>{
+    const div=document.createElement("div");div.className="option";div.innerText=opt;
+    div.onclick=()=>{
+      box.querySelectorAll(".option").forEach(o=>o.style.pointerEvents="none");
+      if(i===sc.correct){div.classList.add("correct");document.getElementById("scExplain").innerText="Correct: "+sc.explain;}
+      else{div.classList.add("wrong");box.children[sc.correct].classList.add("correct");document.getElementById("scExplain").innerText="Review: "+sc.explain;}
+    };
+    box.appendChild(div);
+  });
+}
+function nextScenario(){scIndex=(scIndex+1)%scenarios.length;renderScenario();}
+
+/* ── NAV ── */
+function showSection(name){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  const map={study:"btn-study",tests:"btn-tests",test:"btn-test",scenarios:"btn-scenarios"};
+  document.getElementById(map[name]).classList.add('active');
+  if(name==='test')startQuiz();
+  if(name==='scenarios')renderScenario();
+}
+
+/* ── INIT ── */
+renderParts();renderScenario();
+document.getElementById('qTotal').innerText=questions.length;
+document.getElementById('score-total').innerText=questions.length;
+</script>
+</body>
+</html>
