@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>MyClass1TrainingApp</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1a1a2e;
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
+      min-height: 100vh;
+      width: 100vw;
+      overflow-x: hidden;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 20px 0 40px 0;
+      touch-action: pan-y;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* ── Animated road stripes ── */
+    #road-bg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: linear-gradient(180deg, #1a1a2e 0%, #2d3a1e 60%, #1a2a10 100%);
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .road-stripe {
+      position: absolute;
+      left: 50%;
+      width: 18px;
+      height: 80px;
+      background: #ffd700;
+      border-radius: 4px;
+      transform: translateX(-50%);
+      animation: roadMove 1.2s linear infinite;
+      opacity: 0.85;
+    }
+    @keyframes roadMove {
+      from { transform: translateX(-50%) translateY(-100px); }
+      to   { transform: translateX(-50%) translateY(110vh); }
+    }
+
+    /* ── Main card ── */
+    #main-card {
+      position: relative;
+      z-index: 10;
+      background: rgba(0,0,0,0.88);
+      border: 2px solid #ffd700;
+      border-radius: 22px;
+      padding: 28px 20px 24px 20px;
+      max-width: 440px;
+      width: 92vw;
+      text-align: center;
+      box-shadow: 0 0 60px rgba(255,215,0,0.18), 0 8px 40px rgba(0,0,0,0.7);
+    }
+
+    #truck-emoji {
+      font-size: 62px;
+      display: block;
+      margin-bottom: 8px;
+      animation: truckBounce 2.4s ease-in-out infinite;
+    }
+    @keyframes truckBounce {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-8px); }
+    }
+
+    #game-title {
+      font-size: 28px;
+      font-weight: 900;
+      color: #ffd700;
+      text-shadow: 0 0 20px rgba(255,215,0,0.5), 2px 2px #000;
+      letter-spacing: 2px;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+    #game-subtitle {
+      font-size: 12px;
+      color: #aaa;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    /* ── About Section ── */
+    #about-section {
+      background: rgba(255,215,0,0.06);
+      border: 1px solid rgba(255,215,0,0.25);
+      border-radius: 14px;
+      padding: 14px 14px 12px;
+      margin-bottom: 18px;
+      text-align: left;
+    }
+    #about-section h3 {
+      font-size: 13px;
+      font-weight: 900;
+      color: #ffd700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #about-section p {
+      font-size: 12px;
+      color: #ccc;
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+    .about-module-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .about-module-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .about-module-text {
+      font-size: 11px;
+      color: #bbb;
+      line-height: 1.4;
+    }
+    .about-module-text b {
+      color: #ffd700;
+      font-weight: 800;
+    }
+
+    /* ── Save Info Section ── */
+    #save-section {
+      background: rgba(46,168,255,0.07);
+      border: 1px solid rgba(46,168,255,0.28);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      text-align: left;
+    }
+    #save-section h3 {
+      font-size: 13px;
+      font-weight: 900;
+      color: #2ea8ff;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .save-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .save-key {
+      font-size: 10px;
+      font-weight: 900;
+      color: #fff;
+      background: rgba(46,168,255,0.18);
+      border: 1px solid rgba(46,168,255,0.35);
+      border-radius: 6px;
+      padding: 2px 7px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      font-family: monospace;
+      letter-spacing: .3px;
+    }
+    .save-desc {
+      font-size: 11px;
+      color: #bbb;
+      line-height: 1.4;
+    }
+    #save-section .save-note {
+      font-size: 10px;
+      color: #888;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #444, transparent);
+      margin: 4px 0 14px 0;
+    }
+
+    /* ── App buttons ── */
+    .app-btn {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      background: linear-gradient(135deg, rgba(255,215,0,0.10), rgba(255,215,0,0.03));
+      border: 2px solid #ffd700;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      color: white;
+      transition: background 0.18s, transform 0.12s, box-shadow 0.18s;
+      touch-action: manipulation;
+    }
+    .app-btn:active {
+      transform: scale(0.97);
+      background: rgba(255,215,0,0.22);
+      box-shadow: 0 0 20px rgba(255,215,0,0.35);
+    }
+    .app-btn.start-btn {
+      border-color: #35d07f;
+      background: linear-gradient(135deg, rgba(53,208,127,0.14), rgba(53,208,127,0.04));
+      justify-content: center;
+      padding: 18px 16px;
+      margin-bottom: 18px;
+    }
+    .app-btn.start-btn:active {
+      background: rgba(53,208,127,0.28);
+      box-shadow: 0 0 20px rgba(53,208,127,0.35);
+    }
+    .start-btn-inner {
+      text-align: center;
+    }
+    .start-btn-title {
+      font-size: 17px;
+      font-weight: 900;
+      color: #35d07f;
+      letter-spacing: 1px;
+    }
+    .start-btn-sub {
+      font-size: 11px;
+      color: #9ed9ba;
+      margin-top: 3px;
+      letter-spacing: .3px;
+    }
+
+    .app-icon {
+      font-size: 30px;
+      flex-shrink: 0;
+      width: 40px;
+      text-align: center;
+    }
+    .app-info { text-align: left; flex: 1; }
+    .app-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffd700;
+      letter-spacing: 0.5px;
+    }
+    .app-desc {
+      font-size: 11px;
+      color: #bbb;
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+    .app-arrow {
+      font-size: 18px;
+      color: #ffd700;
+      flex-shrink: 0;
+    }
+
+    #footer-info {
+      font-size: 10px;
+      color: #555;
+      letter-spacing: 1px;
+      margin-top: 6px;
+    }
+    #footer-info span { color: #888; }
+
+    #version {
+      position: fixed;
+      bottom: 10px;
+      right: 12px;
+      font-size: 10px;
+      color: rgba(255,255,255,0.2);
+      z-index: 20;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Animated road background -->
+  <div id="road-bg">
+    <div class="road-stripe" style="animation-delay: 0.0s;"></div>
+    <div class="road-stripe" style="animation-delay: 0.2s;"></div>
+    <div class="road-stripe" style="animation-delay: 0.4s;"></div>
+    <div class="road-stripe" style="animation-delay: 0.6s;"></div>
+    <div class="road-stripe" style="animation-delay: 0.8s;"></div>
+    <div class="road-stripe" style="animation-delay: 1.0s;"></div>
+  </div>
+
+  <!-- Main card -->
+  <div id="main-card">
+    <span id="truck-emoji">🚛</span>
+    <div id="game-title">MyClass1TrainingApp</div>
+    <div id="game-subtitle">CDL Class 1 Driver Training</div>
+
+    <!-- ABOUT SECTION -->
+    <div id="about-section">
+      <h3>���� About This App</h3>
+      <p>
+        <b style="color:#ffd700;">MyClass1TrainingApp</b> is a self-guided CDL Class 1 (Commercial Driver's Licence)
+        training simulator designed to help student drivers study, practise, and prepare for
+        their written and practical exams — right from their phone or tablet.
+      </p>
+      <p>
+        Work through each module in order using <b style="color:#35d07f;">Start Training Sequence</b>,
+        or jump to any module directly. No internet connection required once loaded.
+      </p>
+
+      <div class="about-module-row">
+        <div class="about-module-icon">🛑</div>
+        <div class="about-module-text"><b>Air Brakes</b> — Interactive truck dashboard simulator. Practice the full CDL air brake pre-trip test: build pressure, governor cut-out, applied leak test (60 s timer), low-air warning (~60 PSI), and spring brake pop-out (~30 PSI). Includes a penalty scoring system in Test Mode.</div>
+      </div>
+      <div class="about-module-row">
+        <div class="about-module-icon">🔧</div>
+        <div class="about-module-text"><b>Components Test</b> — Study the complete air brake system component encyclopedia (compressor, governor, slack adjusters, chambers, ABS, glad hands, etc.) with search &amp; category filter, then test yourself with a 10-question scored quiz and scenario trainer.</div>
+      </div>
+      <div class="about-module-row">
+        <div class="about-module-icon">📋</div>
+        <div class="about-module-text"><b>Pre-Trip Inspection</b> — Full interactive CDL pre-trip checklist across 8 vehicle zones (front, cab, fuel, drive tires, coupling/fifth wheel with tug test, trailer, trailer tires, rear). Tap each zone on the truck diagram and check off every item.</div>
+      </div>
+      <div class="about-module-row">
+        <div class="about-module-icon">🚛</div>
+        <div class="about-module-text"><b>Drive</b> — Open-world city driving simulator with a full road grid, traffic lights, crosswalks, street signs, a driver training yard, GPS navigation, night mode with headlights, and an examiner scoring system (lane keeping, red lights, speed).</div>
+      </div>
+    </div>
+
+    <!-- SAVE INFO SECTION -->
+    <div id="save-section">
+      <h3>💾 What Gets Saved (localStorage)</h3>
+      <div class="save-row">
+        <span class="save-key">ixTemplate</span>
+        <span class="save-desc">Your custom intersection layout from the Drive module's Intersection Editor (traffic light & sign positions/rotations).</span>
+      </div>
+      <div class="save-row">
+        <span class="save-key">startPose</span>
+        <span class="save-desc">Your saved truck &amp; trailer start position/angle in the Drive module (set by pressing <b style="color:#fff;">SAVE START</b>).</span>
+      </div>
+      <p class="save-note">
+        ⚠️ All data is saved to your browser's <b style="color:#2ea8ff;">localStorage</b> on this device only.
+        Clearing your browser data or site data will erase saved positions and intersection layouts.
+        No account or internet connection is required.
+      </p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- START TRAINING SEQUENCE -->
+    <a class="app-btn start-btn" href="airbrake.html">
+      <div class="start-btn-inner">
+        <div class="start-btn-title">▶ START TRAINING SEQUENCE</div>
+        <div class="start-btn-sub">Begin with Air Brakes → Components → Pre-Trip → Drive</div>
+      </div>
+    </a>
+
+    <!-- 1. Air Brakes -->
+    <a class="app-btn" href="airbrake.html">
+      <div class="app-icon">🛑</div>
+      <div class="app-info">
+        <div class="app-name">AIR BRAKES</div>
+        <div class="app-desc">Air brake pre-trip simulator & test mode</div>
+      </div>
+      <div class="app-arrow">▶</div>
+    </a>
+
+    <!-- 2. Components Test -->
+    <a class="app-btn" href="components_test.html">
+      <div class="app-icon">🔧</div>
+      <div class="app-info">
+        <div class="app-name">COMPONENTS TEST</div>
+        <div class="app-desc">Study components, quiz & scenario trainer</div>
+      </div>
+      <div class="app-arrow">▶</div>
+    </a>
+
+    <!-- 3. Pre-Trip Inspection -->
+    <a class="app-btn" href="pretrip.html">
+      <div class="app-icon">📋</div>
+      <div class="app-info">
+        <div class="app-name">PRE-TRIP INSPECTION</div>
+        <div class="app-desc">8-zone interactive CDL pre-trip checklist</div>
+      </div>
+      <div class="app-arrow">▶</div>
+    </a>
+
+    <!-- 4. Drive -->
+    <a class="app-btn" href="drive.html">
+      <div class="app-icon">🚛</div>
+      <div class="app-info">
+        <div class="app-name">DRIVE</div>
+        <div class="app-desc">Open-world city driving & examiner scoring</div>
+      </div>
+      <div class="app-arrow">▶</div>
+    </a>
+
+    <div class="divider"></div>
+    <div id="footer-info">MyClass1TrainingApp &nbsp;|&nbsp; <span>gamache61</span></div>
+  </div>
+
+  <div id="version">v1.0</div>
+
+</body>
+</html>
