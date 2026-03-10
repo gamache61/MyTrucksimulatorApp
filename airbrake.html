@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>CDL — Air Brake Pre‑Trip Test (Truck Dash)</title>
+  <style>
+    :root{
+      --panel:#0b1220;
+      --panel2:#070e18;
+      --text:#e8eef7;
+      --muted:#9db0c6;
+      --line:#223044;
+      --shadow: rgba(0,0,0,.55);
+
+      --led: #7cf7ff;
+      --red: #ff4d4d;
+      --amber: #ffb23d;
+      --green: #35d07f;
+      --blue: #2ea8ff;
+      --gold: #ffd700;
+    }
+    *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; font-family:Segoe UI,system-ui,-apple-system,Arial,sans-serif;}
+    body{
+      margin:0;
+      background:
+        radial-gradient(1200px 700px at 40% 0%, rgba(46,168,255,0.08), transparent 60%),
+        linear-gradient(180deg,#03050a,#05070b);
+      color:var(--text);
+      overflow:hidden;
+    }
+
+    #topbar{
+      position:sticky;top:0;z-index:10;
+      background:rgba(6,9,14,.92);
+      border-bottom:1px solid var(--line);
+      padding:8px 12px;
+      box-shadow:0 10px 26px var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+    #title{font-weight:900;letter-spacing:.3px}
+    #subtitle{margin-top:2px;color:var(--muted);font-size:12px;line-height:1.2}
+
+    #wrap{
+      max-width:1200px;
+      margin:0 auto;
+      padding:10px 12px 12px;
+      display:grid;
+      gap:12px;
+      grid-template-columns:1fr;
+      height: calc(100vh - 60px);
+    }
+    @media (min-width: 980px){
+      #wrap{grid-template-columns:1.35fr .65fr;}
+    }
+
+    .card{
+      background:linear-gradient(180deg,var(--panel),var(--panel2));
+      border:1px solid var(--line);
+      border-radius:16px;
+      box-shadow:0 14px 34px var(--shadow);
+      overflow:hidden;
+      min-height:0;
+    }
+    .card h2{
+      margin:0;padding:10px 12px;
+      border-bottom:1px solid var(--line);
+      font-size:13px;color:var(--gold);
+      letter-spacing:.3px;
+      text-transform: uppercase;
+    }
+    .card .body{padding:10px 12px; min-height:0; height: calc(100% - 44px); overflow:hidden;}
+
+    /* Dash */
+    .dash{
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,0.10);
+      overflow:hidden;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.55);
+      background:
+        linear-gradient(180deg, #161c25 0%, #121823 35%, #8a5a35 36%, #8a5a35 48%, #121823 49%, #0c1119 100%);
+      height:100%;
+    }
+    .dashInner{
+      padding:10px;
+      height:100%;
+      overflow:hidden;
+      background:
+        radial-gradient(900px 520px at 40% 0%, rgba(124,247,255,0.08), transparent 60%),
+        radial-gradient(900px 520px at 90% 100%, rgba(255,178,61,0.05), transparent 60%);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .dashGrid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:10px;
+      min-height:0;
+      flex: 1 1 auto;
+    }
+    @media (min-width: 860px){
+      .dashGrid{ grid-template-columns: 1fr 1fr 1fr; }
+    }
+
+    /* Gauge */
+    .gauge{
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.28);
+      padding:10px;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+      overflow:hidden;
+    }
+    .gTitle{font-size:12px;color:rgba(255,255,255,0.70);font-weight:1000;letter-spacing:.25px}
+    .dialWrap{display:flex;align-items:center;justify-content:center;margin-top:8px; flex:1 1 auto; min-height:0;}
+    .dial{
+      --p: 0;
+      width:200px;height:200px;border-radius:50%;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(0,0,0,0.85) 0 45%, rgba(0,0,0,0.55) 46% 64%, rgba(255,255,255,0.06) 65% 100%),
+        conic-gradient(from 210deg,
+          rgba(46,168,255,0.0) 0deg,
+          rgba(46,168,255,0.0) calc((var(--p) * 300deg) - 1deg),
+          rgba(124,247,255,0.95) calc(var(--p) * 300deg),
+          rgba(46,168,255,0.0) calc((var(--p) * 300deg) + 1deg),
+          rgba(46,168,255,0.0) 300deg,
+          transparent 0
+        );
+      border:1px solid rgba(255,255,255,0.10);
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.03), 0 16px 32px rgba(0,0,0,0.45);
+      position:relative;
+    }
+    .dial::after{
+      content:"";
+      position:absolute; inset:14px;
+      border-radius:50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12), transparent 55%);
+      pointer-events:none;
+    }
+    .dialCenter{
+      position:absolute; inset:0;
+      display:flex;align-items:center;justify-content:center;flex-direction:column;
+      text-align:center;
+    }
+    .psiVal{
+      font-size:42px;font-weight:1000;letter-spacing:.5px;
+      color: var(--led);
+      text-shadow: 0 0 22px rgba(124,247,255,0.25);
+      line-height:1;
+    }
+    .psiUnit{margin-top:4px;color:rgba(255,255,255,0.55);font-weight:900;font-size:12px;letter-spacing:.35px}
+    .psiScale{
+      margin-top:10px;
+      display:flex;justify-content:space-between;
+      color:rgba(255,255,255,0.30);
+      font-size:11px;font-weight:900;
+    }
+
+    /* Center screen */
+    .screen{
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:
+        radial-gradient(700px 320px at 40% 0%, rgba(46,168,255,0.12), transparent 60%),
+        linear-gradient(180deg, rgba(0,0,0,0.65), rgba(0,0,0,0.35));
+      padding:10px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 16px 34px rgba(0,0,0,0.45);
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      overflow:hidden;
+    }
+    .screenHdr{
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+      color:rgba(255,255,255,0.70);
+      font-weight:1000;font-size:12px;letter-spacing:.3px;
+      text-transform:uppercase;
+      border-bottom:1px solid rgba(255,255,255,0.10);
+      padding-bottom:8px;
+    }
+    .badge{
+      display:inline-block;padding:4px 10px;border-radius:999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.25);
+      color:rgba(255,255,255,0.75);
+      font-size:11px;font-weight:1000;
+      white-space:nowrap;
+    }
+    .screenText{
+      font-size:13px;line-height:1.35;letter-spacing:.15px;
+      color:rgba(232,238,247,0.92);
+      min-height:70px;
+    }
+
+    /* Lamps */
+    .lamps{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap:8px;
+      width:100%;
+      align-items:stretch;
+    }
+    @media (max-width: 420px){ .lamps{grid-template-columns:repeat(2, minmax(0,1fr));} }
+
+    .lamp{
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.28);
+      border-radius:14px;
+      padding:8px;
+      text-align:center;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+      min-height: 92px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      overflow:hidden;
+      min-width:0;
+    }
+    .dot{width:14px;height:14px;border-radius:50%;margin:0 0 6px;background:rgba(255,255,255,0.10);}
+    .lamp .label{
+      font-size:11px;color:rgba(255,255,255,0.75);
+      font-weight:1000;letter-spacing:.2px;
+      max-width:100%;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .lamp .sub{
+      margin-top:3px;font-size:11px;color:rgba(255,255,255,0.35);
+      max-width:100%;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .onRed .dot{background:var(--red); box-shadow:0 0 18px rgba(255,77,77,0.35);}
+    .onAmber .dot{background:var(--amber); box-shadow:0 0 18px rgba(255,178,61,0.30);}
+    .onGreen .dot{background:var(--green); box-shadow:0 0 18px rgba(53,208,127,0.30);}
+
+    .screenSub{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:8px;
+    }
+    .pill{
+      padding:8px 10px;border-radius:14px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.30);
+      font-size:12px;color:rgba(255,255,255,0.70);
+      display:flex;justify-content:space-between;gap:10px;align-items:center;
+      white-space:nowrap;overflow:hidden;
+    }
+    .pill b{color:var(--text);font-weight:1000}
+    .pill b.bad{color:var(--red)}
+    .pill b.timer{color:var(--gold)}
+
+    /* Knobs */
+    .knobs{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      flex: 0 0 auto;
+    }
+    @media (max-width: 520px){ .knobs{grid-template-columns:1fr;} }
+    .knob{
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.26);
+      padding:10px;
+      display:grid;
+      grid-template-columns: 56px 1fr;
+      gap:12px;
+      align-items:center;
+      overflow:hidden;
+    }
+    .knobFace{
+      width:56px;height:56px;border-radius:14px;
+      border:2px solid rgba(0,0,0,0.45);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.45);
+      position:relative;
+    }
+    .knobFace::after{
+      content:"";
+      position:absolute; inset:10px;
+      border-radius:10px;
+      border:2px dashed rgba(0,0,0,0.25);
+      opacity:0.85;
+    }
+    .knobFace.yellow{ background: linear-gradient(180deg, #ffe883, #ffd700 55%, #8a6a00 100%); }
+    .knobFace.red{ background: linear-gradient(180deg, #ffb3b3, #ff3b3b 55%, #7a0a0a 100%); }
+
+    .knobInfo{min-width:0;}
+    .knobTitle{font-weight:1000;letter-spacing:.2px;font-size:12px}
+    .knobMeta{
+      margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+      color:rgba(255,255,255,0.70);font-size:12px;
+    }
+    .chip{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:4px 10px;border-radius:999px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.25);
+      font-weight:1000;letter-spacing:.15px;
+      white-space:nowrap;cursor:pointer;user-select:none;
+    }
+    .chip .state{color:var(--gold)}
+    .chip.redOn{ border-color: rgba(255,77,77,0.45); }
+    .chip.yellowOn{ border-color: rgba(255,215,0,0.45); }
+    .chip:active{ transform:scale(.985); }
+
+    .knobHelp{
+      color:rgba(255,255,255,0.45);
+      font-size:11px;line-height:1.2;margin-top:6px;
+    }
+
+    /* Buttons */
+    .switchPanel{
+      border-radius:16px;border:1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.24);
+      padding:10px;flex: 0 0 auto;
+    }
+    .btnRow{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap:8px;
+    }
+    @media (max-width: 740px){ .btnRow{grid-template-columns: repeat(2, minmax(0, 1fr));} }
+    button{
+      border-radius:14px;border:1px solid rgba(255,255,255,0.12);
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+      color:var(--text);
+      padding:12px 10px;
+      font-weight:1000;font-size:12px;letter-spacing:.2px;
+      cursor:pointer;user-select:none;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+      min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    button:active{transform:scale(.985)}
+    button.on{border-color:rgba(255,215,0,0.8); color:var(--gold);}
+    button.blue.on{border-color:rgba(46,168,255,0.85); color:var(--blue);}
+    button.good.on{border-color:rgba(53,208,127,0.85); color:var(--green);}
+    button.danger.on{border-color:rgba(255,77,77,0.85); color:var(--red);}
+
+    /* Right: log */
+    .logWrap{height:100%; display:flex; flex-direction:column; gap:10px; min-height:0;}
+    .logHeader{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      color:rgba(255,255,255,0.75);
+      font-weight:1000;letter-spacing:.25px;
+      text-transform:uppercase;font-size:12px;
+    }
+    .log{
+      flex: 1 1 auto;min-height:0;overflow:auto;
+      background:rgba(0,0,0,0.22);
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius:12px;padding:8px;
+      font-size:12px;color:#cfe0f7;line-height:1.35;white-space:pre-wrap;
+    }
+    .tiny{font-size:11px;color:rgba(255,255,255,0.55);line-height:1.25}
+  </style>
+</head>
+<body>
+  <div id="topbar">
+    <div id="title">CDL — Air Brake Pre‑Trip Test (Truck Dash)</div>
+    <div id="subtitle">Added real 60s leak timer + fixed Step 3 progression (it will now advance to Step 4).</div>
+  </div>
+
+  <div id="wrap">
+    <div class="card">
+      <h2>Dashboard</h2>
+      <div class="body">
+        <div class="dash">
+          <div class="dashInner">
+
+            <div class="dashGrid">
+              <div class="gauge">
+                <div class="gTitle">PRIMARY AIR</div>
+                <div class="dialWrap">
+                  <div class="dial" id="priDial" style="--p:0;">
+                    <div class="dialCenter">
+                      <div class="psiVal" id="priVal">0</div>
+                      <div class="psiUnit">PSI</div>
+                      <div class="psiScale"><span>0</span><span>60</span><span>120</span><span>140</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="screen">
+                <div class="screenHdr">
+                  DRIVER INFO / PROCEDURE
+                  <span class="badge" id="stepBadge">Step 1</span>
+                </div>
+                <div class="screenText" id="stepText"></div>
+
+                <div class="lamps">
+                  <div class="lamp" id="lampLowAir">
+                    <div class="dot"></div><div class="label">LOW AIR</div><div class="sub">~60 PSI</div>
+                  </div>
+                  <div class="lamp" id="lampPark">
+                    <div class="dot"></div><div class="label">PARK BRAKE</div><div class="sub">Spring</div>
+                  </div>
+                  <div class="lamp" id="lampGov">
+                    <div class="dot"></div><div class="label">GOVERNOR</div><div class="sub" id="govText">—</div>
+                  </div>
+                  <div class="lamp" id="lampComp">
+                    <div class="dot"></div><div class="label">COMPRESSOR</div><div class="sub" id="compText">OFF</div>
+                  </div>
+                </div>
+
+                <div class="screenSub">
+                  <div class="pill"><span>Status</span><b id="statusText">Ready</b></div>
+                  <div class="pill"><span>Service</span><b id="svcText">RELEASED</b></div>
+                  <div class="pill"><span>Leak Timer</span><b id="leakTimerText" class="timer">60s</b></div>
+                  <div class="pill"><span>Leak Test</span><b id="leakText">—</b></div>
+                  <div class="pill"><span>Warnings</span><b id="warnText">None</b></div>
+                  <div class="pill"><span>Penalties</span><b id="penaltyText" class="bad">0</b></div>
+                </div>
+              </div>
+
+              <div class="gauge">
+                <div class="gTitle">SECONDARY AIR</div>
+                <div class="dialWrap">
+                  <div class="dial" id="secDial" style="--p:0;">
+                    <div class="dialCenter">
+                      <div class="psiVal" id="secVal">0</div>
+                      <div class="psiUnit">PSI</div>
+                      <div class="psiScale"><span>0</span><span>60</span><span>120</span><span>140</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="knobs">
+              <div class="knob">
+                <div class="knobFace red"></div>
+                <div class="knobInfo">
+                  <div class="knobTitle">TRAILER AIR SUPPLY (RED)</div>
+                  <div class="knobMeta">
+                    <span class="chip redOn" id="chipRed" role="button" tabindex="0">
+                      RED • <span class="state" id="trailerVal">SET</span>
+                    </span>
+                  </div>
+                  <div class="knobHelp">Release while PSI is high to prove pop-out near ~30 PSI.</div>
+                </div>
+              </div>
+
+              <div class="knob">
+                <div class="knobFace yellow"></div>
+                <div class="knobInfo">
+                  <div class="knobTitle">PARK (SPRING) BRAKE (YELLOW)</div>
+                  <div class="knobMeta">
+                    <span class="chip yellowOn" id="chipYellow" role="button" tabindex="0">
+                      YELLOW • <span class="state" id="parkVal">SET</span>
+                    </span>
+                  </div>
+                  <div class="knobHelp">Will pop out (SET automatically) when PSI drops near ~30 PSI.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="switchPanel">
+              <div class="btnRow">
+                <button id="btnChock" class="good">WHEELS CHOCKED</button>
+                <button id="btnEngine" class="blue">ENGINE</button>
+                <button id="btnFastIdle" class="blue">FAST IDLE</button>
+                <button id="btnApply" class="danger">APPLY SERVICE</button>
+                <button id="btnRelease" class="good">RELEASE SERVICE</button>
+                <button id="btnFan" class="danger">FAN AIR</button>
+                <button id="btnTestMode">TEST MODE: OFF</button>
+                <button id="btnReset" class="danger">RESET</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Event Log</h2>
+      <div class="body">
+        <div class="logWrap">
+          <div class="logHeader">
+            COMPACT LOG
+            <span class="tiny">newest on top</span>
+          </div>
+          <div class="log" id="log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const UI = {
+  priVal: document.getElementById('priVal'),
+  secVal: document.getElementById('secVal'),
+  priDial: document.getElementById('priDial'),
+  secDial: document.getElementById('secDial'),
+
+  status: document.getElementById('statusText'),
+  warn: document.getElementById('warnText'),
+  leak: document.getElementById('leakText'),
+  leakTimerText: document.getElementById('leakTimerText'),
+  svc: document.getElementById('svcText'),
+
+  govText: document.getElementById('govText'),
+  compText: document.getElementById('compText'),
+
+  stepBadge: document.getElementById('stepBadge'),
+  stepText: document.getElementById('stepText'),
+
+  penalties: document.getElementById('penaltyText'),
+
+  trailerVal: document.getElementById('trailerVal'),
+  parkVal: document.getElementById('parkVal'),
+
+  chipRed: document.getElementById('chipRed'),
+  chipYellow: document.getElementById('chipYellow'),
+
+  lampLowAir: document.getElementById('lampLowAir'),
+  lampPark: document.getElementById('lampPark'),
+  lampGov: document.getElementById('lampGov'),
+  lampComp: document.getElementById('lampComp'),
+
+  btnChock: document.getElementById('btnChock'),
+  btnEngine: document.getElementById('btnEngine'),
+  btnFastIdle: document.getElementById('btnFastIdle'),
+  btnApply: document.getElementById('btnApply'),
+  btnRelease: document.getElementById('btnRelease'),
+  btnFan: document.getElementById('btnFan'),
+  btnTestMode: document.getElementById('btnTestMode'),
+  btnReset: document.getElementById('btnReset'),
+
+  log: document.getElementById('log'),
+};
+
+function logLine(msg){
+  const t = new Date();
+  const hh = String(t.getHours()).padStart(2,'0');
+  const mm = String(t.getMinutes()).padStart(2,'0');
+  const ss = String(t.getSeconds()).padStart(2,'0');
+  UI.log.textContent = `[${hh}:${mm}:${ss}] ${msg}\n` + UI.log.textContent;
+}
+
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+const CFG = {
+  maxPSI: 140,
+  cutIn: 85,
+  cutOut: 120,
+  lowAirWarn: 60,
+  springPop: 30,
+  buildRateIdle: 70.0,
+  buildRateFast: 100.0,
+  fanRate: 90.0,
+  baseLeak: 0.6,
+  appliedLeakExtra: 1.8,
+  leakTestSeconds: 60,
+};
+
+const State = {
+  engineOn: false,
+  fastIdle: false,
+  wheelsChocked: false,
+  serviceApplied: false,
+
+  parkSet: true,
+  trailerSet: true,
+
+  pri: 0,
+  sec: 0,
+
+  compressorOn: false,
+  governor: "—",
+  warnings: [],
+
+  step: 1,
+  lastStepMsg: "",
+
+  leakActive: false,
+  leakTimer: 0,
+
+  testMode: false,
+  penalty: 0,
+  penaltyFlags: {
+    engineBeforeChock:false,
+    fanTooEarly:false,
+    fanWithServiceApplied:false,
+    fanWhileKnobsSet:false,
+    applyWithEngineOn:false,
+  }
+};
+
+function penaltyOnce(flag, points, text){
+  if(!State.testMode) return;
+  if(State.penaltyFlags[flag]) return;
+  State.penaltyFlags[flag]=true;
+  State.penalty += points;
+  logLine(`PENALTY -${points}: ${text}`);
+}
+
+function setLamp(el, mode){
+  el.classList.remove('onRed','onAmber','onGreen');
+  if(mode) el.classList.add(mode);
+}
+
+function stepMessage(n){
+  if(n===1) return `Step 1: CHOCK WHEELS.`;
+  if(n===2) return `Step 2: ENGINE ON. Build to governor CUT-OUT (~${CFG.cutOut} PSI). Then RELEASE BOTH KNOBS (RED + YELLOW) while PSI is HIGH so you can prove they POP OUT automatically at ~${CFG.springPop} PSI.`;
+  if(n===3) return `Step 3: ENGINE OFF. APPLY SERVICE BRAKE and hold for ${CFG.leakTestSeconds}s (Applied Leak Test).`;
+  if(n===4) return `Step 4: RELEASE SERVICE BRAKE and confirm BOTH KNOBS are RELEASED. Fan down to LOW-AIR warning (~${CFG.lowAirWarn} PSI), then keep fanning to ~${CFG.springPop} PSI to check POP-OUT (knobs set automatically).`;
+  if(n===5) return `Step 5: Keep fanning. At ~${CFG.springPop} PSI the spring/parking brakes should POP OUT (knobs SET).`;
+  return `Step 6: Test complete. RESET to practice again.`;
+}
+
+function setStep(n, msg){
+  const m = msg || stepMessage(n);
+  if(State.step!==n || State.lastStepMsg!==m){
+    State.step=n; State.lastStepMsg=m;
+    UI.stepBadge.textContent = `Step ${n}`;
+    UI.stepText.textContent = m;
+  }
+}
+
+function updateDerived(){
+  State.warnings = [];
+  if(State.pri<=CFG.lowAirWarn || State.sec<=CFG.lowAirWarn) State.warnings.push("LOW AIR");
+
+  if(State.engineOn){
+    const aboveOut = (State.pri>=CFG.cutOut) && (State.sec>=CFG.cutOut);
+    if(aboveOut){ State.compressorOn=false; State.governor="CUT-OUT"; }
+    else { State.compressorOn=true; State.governor=(State.pri<=CFG.cutIn||State.sec<=CFG.cutIn) ? "CUT-IN" : "BUILDING"; }
+  } else {
+    State.compressorOn=false;
+    State.governor="ENGINE OFF";
+  }
+
+  // pop-out sets knobs automatically if they were released
+  const lowForPop = (State.pri<=CFG.springPop || State.sec<=CFG.springPop);
+  if(lowForPop){
+    if(!State.parkSet){ State.parkSet=true; logLine("YELLOW knob POP-OUT (park set automatically)."); }
+    if(!State.trailerSet){ State.trailerSet=true; logLine("RED knob POP-OUT (trailer set automatically)."); }
+  }
+}
+
+function psiToP(psi){ return clamp(psi/CFG.maxPSI, 0, 1); }
+
+function render(){
+  UI.priVal.textContent = Math.round(State.pri);
+  UI.secVal.textContent = Math.round(State.sec);
+  UI.priDial.style.setProperty('--p', psiToP(State.pri));
+  UI.secDial.style.setProperty('--p', psiToP(State.sec));
+
+  UI.status.textContent = State.engineOn ? "Engine running" : "Engine off";
+  UI.warn.textContent = State.warnings.length ? State.warnings.join(", ") : "None";
+  UI.warn.style.color = State.warnings.length ? "var(--red)" : "rgba(255,255,255,0.85)";
+
+  UI.govText.textContent = State.governor;
+  UI.compText.textContent = State.compressorOn ? "ON" : "OFF";
+
+  UI.svc.textContent = State.serviceApplied ? "APPLIED" : "RELEASED";
+  UI.svc.style.color = State.serviceApplied ? "var(--amber)" : "var(--led)";
+
+  // Leak display + 60 second timer display
+  UI.leak.textContent = State.leakActive ? "RUNNING" : "—";
+  UI.leakTimerText.textContent = State.leakActive ? `${Math.ceil(State.leakTimer)}s` : "60s";
+  UI.leakTimerText.style.color = State.leakActive ? "var(--gold)" : "rgba(255,255,255,0.70)";
+
+  UI.penalties.textContent = String(State.penalty);
+
+  UI.parkVal.textContent = State.parkSet ? "SET" : "RELEASED";
+  UI.trailerVal.textContent = State.trailerSet ? "SET" : "RELEASED";
+
+  UI.chipYellow.classList.toggle('yellowOn', State.parkSet);
+  UI.chipRed.classList.toggle('redOn', State.trailerSet);
+
+  setLamp(UI.lampLowAir, State.warnings.length ? "onRed" : "");
+  setLamp(UI.lampPark, State.parkSet ? "onAmber" : "");
+  setLamp(UI.lampGov, State.governor==="CUT-OUT" ? "onGreen" : (State.governor==="CUT-IN" ? "onAmber" : ""));
+  setLamp(UI.lampComp, State.compressorOn ? "onGreen" : "");
+
+  UI.btnChock.classList.toggle("on", State.wheelsChocked);
+  UI.btnEngine.classList.toggle("on", State.engineOn);
+  UI.btnFastIdle.classList.toggle("on", State.fastIdle && State.engineOn);
+  UI.btnApply.classList.toggle("on", State.serviceApplied);
+  UI.btnRelease.classList.toggle("on", !State.serviceApplied);
+
+  UI.btnTestMode.classList.toggle("on", State.testMode);
+  UI.btnTestMode.textContent = `TEST MODE: ${State.testMode ? "ON" : "OFF"}`;
+}
+
+function resetAll(){
+  State.engineOn=false;
+  State.fastIdle=false;
+  State.wheelsChocked=false;
+  State.serviceApplied=false;
+  State.parkSet=true;
+  State.trailerSet=true;
+
+  State.pri=0; State.sec=0;
+  State.step=1; State.lastStepMsg="";
+  State.leakActive=false; State.leakTimer=0;
+
+  State.penalty=0;
+  State.penaltyFlags = { engineBeforeChock:false, fanTooEarly:false, fanWithServiceApplied:false, fanWhileKnobsSet:false, applyWithEngineOn:false };
+
+  logLine("Reset.");
+  setStep(1);
+  updateDerived();
+  render();
+}
+
+function tick(dt){
+  const dtMin = dt/60;
+
+  // pressure change
+  let leakPri = CFG.baseLeak;
+  let leakSec = CFG.baseLeak;
+  if(State.serviceApplied){
+    leakPri += CFG.appliedLeakExtra;
+    leakSec += CFG.appliedLeakExtra;
+  }
+
+  let buildPri=0, buildSec=0;
+  if(State.compressorOn){
+    const rate = State.fastIdle ? CFG.buildRateFast : CFG.buildRateIdle;
+    buildPri = rate; buildSec = rate;
+  }
+
+  State.pri = clamp(State.pri + (buildPri - leakPri)*dtMin, 0, CFG.maxPSI);
+  State.sec = clamp(State.sec + (buildSec - leakSec)*dtMin, 0, CFG.maxPSI);
+
+  updateDerived();
+
+  // Step flow
+  if(State.step===1 && State.wheelsChocked){
+    setStep(2);
+    logLine("Step 2 started: build air to cut-out.");
+  }
+  if(State.step===2 && State.engineOn && State.governor==="CUT-OUT"){
+    setStep(3);
+    logLine("Governor CUT-OUT reached.");
+    logLine(`Now release BOTH knobs while PSI is high to prove pop-out at ~${CFG.springPop} PSI.`);
+  }
+
+  /*
+    FIX: "Not going past Step 3"
+    Cause (common): leak timer never starts because it required PSI > 20.
+    If the user starts from 0 PSI, turns engine OFF immediately, applies brake,
+    the timer won't start.
+
+    Solution:
+    - Start leak test timer whenever: step===3 AND engine is OFF AND serviceApplied is true.
+    - (Still realistic enough for training; user can build pressure first anyway.)
+  */
+  const shouldLeak = (State.step===3 && !State.engineOn && State.serviceApplied);
+
+  if(shouldLeak && !State.leakActive){
+    State.leakActive=true;
+    State.leakTimer=CFG.leakTestSeconds;
+    logLine(`Applied leak test STARTED (${CFG.leakTestSeconds}s).`);
+  }
+
+  if(State.leakActive){
+    if(!shouldLeak){
+      State.leakActive=false;
+      State.leakTimer=0;
+      logLine("Applied leak test STOPPED (engine OFF + service brake APPLIED required).");
+    } else {
+      State.leakTimer = Math.max(0, State.leakTimer - dt);
+      if(State.leakTimer<=0){
+        State.leakActive=false;
+        setStep(4);
+        logLine(`Leak test COMPLETE. Release service + release both knobs, then fan to ~${CFG.lowAirWarn} PSI and ~${CFG.springPop} PSI.`);
+      }
+    }
+  }
+
+  if(State.step===4 && (State.pri<=CFG.lowAirWarn || State.sec<=CFG.lowAirWarn)){
+    setStep(5);
+    logLine(`LOW AIR warning reached (~${CFG.lowAirWarn} PSI). Continue to ~${CFG.springPop} PSI for pop-out.`);
+  }
+
+  if(State.step===5 && State.parkSet && State.trailerSet){
+    setStep(6);
+    logLine("Pop-out confirmed (both knobs set).");
+  }
+
+  render();
+}
+
+/* Actions */
+UI.btnTestMode.onclick = () => {
+  State.testMode = !State.testMode;
+  logLine(State.testMode ? "TEST MODE enabled (penalties ON)." : "TEST MODE disabled (penalties OFF).");
+  render();
+};
+UI.btnChock.onclick = () => { State.wheelsChocked = !State.wheelsChocked; logLine(State.wheelsChocked ? "Wheels chocked." : "Chocks removed."); render(); };
+UI.btnEngine.onclick = () => {
+  const turningOn = !State.engineOn;
+  if(turningOn && !State.wheelsChocked) penaltyOnce("engineBeforeChock", 10, "Engine started before wheels chocked");
+  State.engineOn = !State.engineOn;
+  if(!State.engineOn) State.fastIdle=false;
+  logLine(State.engineOn ? "Engine ON." : "Engine OFF.");
+  updateDerived(); render();
+};
+UI.btnFastIdle.onclick = () => { if(!State.engineOn){ logLine("Fast idle requires engine ON."); return; } State.fastIdle=!State.fastIdle; logLine(State.fastIdle?"Fast idle ON.":"Fast idle OFF."); render(); };
+UI.btnApply.onclick = () => { if(State.engineOn) penaltyOnce("applyWithEngineOn", 5, "Service applied with engine ON (leak test expects engine OFF)"); State.serviceApplied=true; logLine("Service brake APPLIED."); render(); };
+UI.btnRelease.onclick = () => { State.serviceApplied=false; logLine("Service brake RELEASED."); render(); };
+
+function toggleYellow(){
+  if(State.parkSet){
+    if(State.pri<=CFG.springPop || State.sec<=CFG.springPop){ logLine("Cannot RELEASE yellow knob: air too low."); return; }
+    State.parkSet=false; logLine("Yellow (park) knob RELEASED.");
+  } else { State.parkSet=true; logLine("Yellow (park) knob SET."); }
+  render();
+}
+function toggleRed(){
+  if(State.trailerSet){
+    if(State.pri<=CFG.springPop || State.sec<=CFG.springPop){ logLine("Cannot RELEASE red knob: air too low."); return; }
+    State.trailerSet=false; logLine("Red (trailer) knob RELEASED.");
+  } else { State.trailerSet=true; logLine("Red (trailer) knob SET."); }
+  render();
+}
+UI.chipYellow.onclick = toggleYellow;
+UI.chipRed.onclick = toggleRed;
+UI.chipYellow.onkeydown = (e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleYellow(); } };
+UI.chipRed.onkeydown = (e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleRed(); } };
+
+UI.btnFan.onclick = () => {
+  if(State.step<4) penaltyOnce("fanTooEarly", 5, "Fanned before Step 4");
+  if(State.step>=4 && State.serviceApplied) penaltyOnce("fanWithServiceApplied", 7, "Fanning with service applied (release service brake)");
+  if(State.step>=4 && (State.parkSet || State.trailerSet)) penaltyOnce("fanWhileKnobsSet", 7, "Knobs still set (release both knobs first to prove pop-out)");
+
+  const dropPerSec = CFG.fanRate/60;
+  State.pri = clamp(State.pri - dropPerSec, 0, CFG.maxPSI);
+  State.sec = clamp(State.sec - dropPerSec, 0, CFG.maxPSI);
+  logLine("Fanned air.");
+  updateDerived(); render();
+};
+
+UI.btnReset.onclick = resetAll;
+
+/* Loop */
+let last = performance.now();
+function loop(t){
+  const dt = Math.min(0.05, (t-last)/1000);
+  last = t;
+  tick(dt);
+  requestAnimationFrame(loop);
+}
+resetAll();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
