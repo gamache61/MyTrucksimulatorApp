@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Remi's Semi - Level 1 Ball Lever</title>
+  <style>
+    body { margin: 0; background: #2d613e; font-family: 'Segoe UI', sans-serif; overflow: hidden; color: white; touch-action: none; height: 100vh; width: 100vw; -webkit-user-select: none; user-select: none; }
+    canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
+    #model-name { position: absolute; top: 5px; right: 10px; color: rgba(255,255,255,0.3); font-size: 10px; z-index: 20; }
+    #dashboard { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 10; pointer-events: none; text-align: center; width: 100%; }
+    #msg { font-size: 16px; color: #ffd700; text-shadow: 2px 2px #000; font-weight: bold; margin-bottom: 5px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 15px; display: inline-block; width: 94%; line-height: 1.2; box-sizing: border-box; border: 1px solid #444; }
+    #bottom-stats { display: flex; justify-content: space-between; align-items: center; padding: 0 3%; margin-top: 5px; pointer-events: auto; }
+    .stat-box { background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 5px; border: 1px solid #444; font-family: monospace; font-size: 16px; pointer-events: none; }
+    #btnBackToStart { width: 35px; height: 35px; border-radius: 50%; background: #ffd700; color: #000; font-weight: bold; font-size: 20px; border: 2px solid #000; display: flex; align-items: center; justify-content: center; pointer-events: auto; cursor: pointer; text-decoration: none; position: absolute; top: 0; left: 10px; }
+    #controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px; box-sizing: border-box; z-index: 10; pointer-events: none; }
+    .left-controls { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; pointer-events: auto; }
+    .pedal-box { display: flex; gap: 8px; }
+    #steering-pad { width: 180px; height: 80px; position: absolute; right: 20px; bottom: 40px; touch-action: none; pointer-events: auto; background: transparent; }
+    #steering-wheel { width: 50px; height: 50px; background: rgba(34, 34, 34, 0.8); border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); box-shadow: 0 8px 15px rgba(0,0,0,0.8); pointer-events: none; }
+    .btn { width: 70px; height: 60px; background: rgba(51,51,51,0.8); border: 2px solid #555; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: white; user-select: none; pointer-events: auto; }
+    #btnStart { background: rgba(80,0,0,0.8); border-color: #f00; height: 40px; font-weight: bold; }
+    #btnStart.on { background: rgba(0,80,0,0.8); border-color: #0f0; }
+    #btnView { height: 40px; font-size: 10px; background: rgba(0, 100, 200, 0.8); }
+
+    #pretrip-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.93); z-index: 200; display: flex;
+      flex-direction: column; align-items: center; overflow: hidden; touch-action: auto;
+    }
+    #pretrip-header {
+      width: 100%; background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border-bottom: 3px solid #ffd700; padding: 10px 16px; box-sizing: border-box;
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+      /* Push content below the fixed nav bar */
+      padding-top: 64px;
+    }
+    #pretrip-title { font-size: 16px; font-weight: bold; color: #ffd700; letter-spacing: 1px;}
+    #pretrip-progress-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 2px;}
+    #pretrip-progress-label { font-size: 9px; color: #aaa; letter-spacing: 1px;}
+    #pretrip-progress-bar-bg { width: 120px; height: 10px; background: #333; border-radius: 5px; overflow: hidden; border: 1px solid #555;}
+    #pretrip-progress-bar { height: 100%; background: linear-gradient(90deg, #ffd700, #ff9900); width: 0%; transition: width 0.3s; border-radius: 5px;}
+    #pretrip-progress-count { font-size: 9px; color: #ffd700; text-align: right;}
+
+    #pretrip-truck-view { width: 100%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 8px 0 4px 0; position: relative; }
+    #truck-image-container { position: relative; width: 340px; height: 130px; }
+    #truck-image { width: 100%; height: 100%; object-fit: contain; user-select: none; -webkit-user-drag: none; pointer-events: auto; touch-action: manipulation; display: block; background: transparent; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25)); }
+
+    .touch-zone { position: absolute; background: transparent; border: none; cursor: pointer; touch-action: manipulation; z-index: 2; }
+
+    #zone-panel { width: 100%; flex: 1; overflow-y: auto; padding: 6px 10px 90px 10px; box-sizing: border-box; -webkit-overflow-scrolling: touch; }
+    #zone-panel-title { font-size: 13px; font-weight: bold; color: #ffd700; border-bottom: 2px solid #ffd700; padding-bottom: 4px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    #zone-panel-title .zone-title-icon { font-size: 18px; }
+    .inspection-item { display: flex; align-items: center; gap: 10px; padding: 10px 10px; border-bottom: 1px solid #2a2a2a; cursor: pointer; border-radius: 6px; transition: background 0.15s; touch-action: manipulation; }
+    .inspection-item:active { background: rgba(255,215,0,0.08); }
+    .inspection-item.checked { background: rgba(0,255,136,0.07); }
+
+    .item-subheader { font-size: 11px; font-weight: bold; color: #ff9900; letter-spacing: 1px; text-transform: uppercase; padding: 10px 10px 4px 10px; border-bottom: 1px solid #333; margin-top: 4px; }
+
+    .item-checkbox { width: 26px; height: 26px; border: 2px solid #555; border-radius: 5px; background: #111; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; transition: border-color 0.2s, background 0.2s; }
+    .inspection-item.checked .item-checkbox { border-color: #00ff88; background: rgba(0,255,136,0.2); color: #00ff88; }
+    .item-text { flex: 1; }
+    .item-name { font-size: 13px; color: #eee; font-weight: 600; }
+    .item-desc { font-size: 10px; color: #888; margin-top: 2px; }
+    .inspection-item.checked .item-name { color: #00ff88; }
+
+    #pretrip-footer {
+      position: absolute; bottom: 0; left: 0; width: 100%;
+      background: rgba(10,10,10,0.97); border-top: 2px solid #333;
+      padding: 8px 14px; box-sizing: border-box; display: flex;
+      align-items: center; justify-content: space-between; z-index: 205;
+    }
+    #pretrip-footer-info { font-size: 11px; color: #888; }
+    #pretrip-footer-info span { color: #ffd700; font-weight: bold; }
+    #pretrip-footer-actions { display: flex; align-items: center; gap: 8px; }
+    #btn-skip-inspection { background: rgba(100,100,0,0.6); border: 2px solid #ffd700; color: #ffd700; font-size: 12px; font-weight: bold; border-radius: 8px; padding: 8px 14px; cursor: pointer; touch-action: manipulation; }
+    #btn-finish-inspection { background: rgba(0,100,0,0.6); border: 2px solid #0f0; color: #0f0; font-size: 12px; font-weight: bold; border-radius: 8px; padding: 8px 18px; cursor: pointer; touch-action: manipulation; opacity: 0.4; pointer-events: none; transition: opacity 0.3s; }
+    #btn-finish-inspection.enabled { opacity: 1; pointer-events: auto; }
+
+    #pretrip-complete {
+      display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.97); flex-direction: column; align-items: center; justify-content: center; z-index: 210; padding: 20px; box-sizing: border-box;
+    }
+    #pretrip-complete.show { display: flex; }
+    #complete-icon { font-size: 64px; margin-bottom: 10px; }
+    #complete-title { font-size: 22px; font-weight: bold; color: #00ff88; margin-bottom: 6px; text-align: center; }
+    #complete-sub { font-size: 13px; color: #aaa; margin-bottom: 20px; text-align: center; }
+    #complete-stats { background: #111; border: 2px solid #333; border-radius: 10px; padding: 14px 24px; margin-bottom: 22px; width: 100%; max-width: 320px; box-sizing: border-box; }
+    .stat-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #222; font-size: 13px; }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-label { color: #aaa; }
+    .stat-val { color: #ffd700; font-weight: bold; }
+    #btn-begin-drive { background: linear-gradient(135deg, #006400, #00aa00); border: 3px solid #00ff88; color: #fff; font-size: 18px; font-weight: bold; border-radius: 14px; padding: 16px 40px; cursor: pointer; letter-spacing: 1px; box-shadow: 0 0 30px rgba(0,255,136,0.4); touch-action: manipulation; }
+
+    #zone-panel::-webkit-scrollbar { width: 4px; }
+    #zone-panel::-webkit-scrollbar-track { background: #111; }
+    #zone-panel::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+
+    #drive-ui {
+      position: absolute;
+      inset: 0;
+      z-index: 220;
+      display: none;
+      pointer-events: none;
+    }
+    #drive-hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 225;
+      color: #fff;
+      font-size: 13px;
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      padding: 8px 10px;
+      line-height: 1.5;
+      pointer-events: none;
+    }
+    #drive-msg {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 225;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid #444;
+      border-radius: 12px;
+      color: #ffd700;
+      font-weight: 700;
+      padding: 8px 14px;
+      font-size: 14px;
+      pointer-events: none;
+      max-width: 86vw;
+      text-align: center;
+    }
+    #coach-text {
+      position: absolute;
+      top: 56px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 225;
+      background: rgba(0,0,0,0.72);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 12px;
+      color: #fff;
+      font-weight: 600;
+      padding: 8px 12px;
+      font-size: 12px;
+      max-width: 90vw;
+      text-align: center;
+      line-height: 1.35;
+      pointer-events: none;
+    }
+    #reverse-btn {
+      position: absolute;
+      left: 20px;
+      bottom: 22px;
+      z-index: 226;
+      width: 86px;
+      height: 62px;
+      border-radius: 12px;
+      border: 2px solid #777;
+      background: rgba(20,20,20,0.85);
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+    #reverse-btn.active {
+      border-color: #ff9800;
+      color: #ff9800;
+      box-shadow: 0 0 12px rgba(255,152,0,0.5);
+    }
+    #lever-wrap {
+      position: absolute;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      width: min(72vw, 440px);
+      height: 72px;
+      z-index: 226;
+      pointer-events: auto;
+      touch-action: none;
+      background: transparent;
+    }
+    #lever-rail {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 8px;
+      transform: translateY(-50%);
+      background: transparent;
+    }
+    #lever-ball {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 58px;
+      height: 58px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #666, #1f1f1f 60%, #0b0b0b 100%);
+      border: 2px solid rgba(255,255,255,0.2);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.8);
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    /* ── MODULE NAV (TOP) ─────────────────────────────────────── */
+    .moduleNavTop {
+      position: fixed;
+      left: 12px; right: 12px; top: 12px;
+      z-index: 260;
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 12px 26px rgba(0,0,0,0.55);
+      pointer-events: auto;
+    }
+    .moduleNavTop .left, .moduleNavTop .right {
+      display: flex; gap: 10px; align-items: center; min-width: 0;
+    }
+    .moduleNavTop a, .moduleNavTop button {
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      padding: 10px 12px;
+      font-weight: 900;
+      font-size: 12px;
+      letter-spacing: .2px;
+      cursor: pointer;
+      text-decoration: none;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .moduleNavTop a:active, .moduleNavTop button:active { transform: scale(.985); }
+    .moduleNavTop .title {
+      color: rgba(255,255,255,0.80);
+      font-weight: 900;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 42vw;
+    }
+  
+ /* --- Quiz behavior add-ons (no layout/style changes) --- */
+ .touch-zone.active { outline: 2px solid rgba(255,215,0,0.85); outline-offset: 2px; box-shadow: 0 0 10px rgba(255,215,0,0.35); border-radius: 6px; }
+ .touch-zone.worked { outline: 2px solid rgba(0,255,136,0.75); outline-offset: 2px; box-shadow: 0 0 10px rgba(0,255,136,0.25); border-radius: 6px; }
+ .inspection-item.wrong { background: rgba(255,0,0,0.14) !important; border: 1px solid rgba(255,0,0,0.35); }
+ .inspection-item.wrong .item-checkbox { border-color: rgba(255,0,0,0.75); background: rgba(255,0,0,0.12); color: #ff4444; }
+ .inspection-item.wrong .item-name { color: #ff4444; }
+ #zone-feedback { margin-left: auto; font-size: 11px; color: #ff4444; font-weight: 800; letter-spacing: .4px; display:none; }
+ #zone-feedback.show { display:inline; }
+
+</style>
+</head>
+<body oncontextmenu="return false;">
+  <div id="model-name">Model: Gemini 3 Flash</div>
+
+  <!-- ── MODULE NAV (TOP) ─────────────────────────────────────── -->
+  <div class="moduleNavTop" id="moduleNav">
+    <div class="left">
+      <a href="index.html">HOME</a>
+      <span class="title" id="moduleNavTitle">Pre-Trip</span>
+    </div>
+    <div class="right">
+      <button id="btnPrev">◀ PREV</button>
+      <button id="btnNext">NEXT ▶</button>
+    </div>
+  </div>
+
+  <div id="dashboard">
+    <div id="msg">MISSION: DROP BOX TRAILER IN MARKED SPOT (YELLOW LINES) IN MAIN YARD &amp; HOOK TO FLATBED</div>
+    <div id="bottom-stats">
+      <div class="stat-box" style="color: #33ccff;">TIME: <span id="timer">00:00</span></div>
+      <div class="stat-box" style="color: #ff9900;">DIST: <span id="miles">0.0</span></div>
+      <a href="index.html" id="btnBackToStart">?</a>
+    </div>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="controls">
+    <div class="left-controls">
+      <div class="pedal-box">
+        <div id="btnDown" class="btn">REV</div>
+        <div id="btnUp" class="btn">GAS</div>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 5px;">
+        <button id="btnStart" class="btn">START</button>
+        <button id="btnView" class="btn">VIEW</button>
+        <button id="btnDrop" class="btn" style="height:40px; font-size: 10px; background: rgba(200, 100, 0, 0.8);" onclick="handleHitch()">DROP/HOOK</button>
+      </div>
+    </div>
+    <div id="steering-pad"><div id="steering-wheel"></div></div>
+  </div>
+
+  <div id="drive-ui">
+    <div id="drive-msg">DRIVER TRAINING - ROAD SKILLS</div>
+    <div id="coach-text">Instructor: Start rolling straight. Keep centered in your lane.</div>
+    <div id="drive-hud">
+      <div><strong>Post Pre-Trip Certification</strong></div>
+      <div>Speed: <span id="speedReadout">0</span> mph</div>
+      <div>Gear: <span id="gearReadout">N</span></div>
+      <div>Lights: <span id="lightsReadout">OFF</span></div>
+    </div>
+    <button id="reverse-btn">REVERSE</button>
+    <div id="lever-wrap">
+      <div id="lever-rail"></div>
+      <div id="lever-ball"></div>
+    </div>
+  </div>
+
+  <div id="pretrip-overlay">
+    <div id="pretrip-header">
+      <div id="pretrip-title">🚛 PRE-TRIP INSPECTION</div>
+      <div id="pretrip-progress-wrap">
+        <div id="pretrip-progress-label">INSPECTION PROGRESS</div>
+        <div id="pretrip-progress-bar-bg"><div id="pretrip-progress-bar"></div></div>
+        <div id="pretrip-progress-count">0 / 0 items</div>
+      </div>
+    </div>
+
+    <div id="pretrip-truck-view">
+      <div id="truck-image-container">
+        <img id="truck-image" alt="Truck Side View" />
+
+        <div class="touch-zone" style="left:274px;top:52px;width:43px;height:30px;" onpointerdown="openZone('front')"></div>
+        <div class="touch-zone" style="left:251px;top:46px;width:25px;height:22px;" onpointerdown="openZone('cab')"></div>
+        <div class="touch-zone" style="left:239px;top:80px;width:37px;height:22px;" onpointerdown="openZone('fuel')"></div>
+        <div class="touch-zone" style="left:230px;top:98px;width:62px;height:24px;" onpointerdown="openZone('drivetires')"></div>
+        <div class="touch-zone" style="left:206px;top:84px;width:24px;height:20px;" onpointerdown="openZone('coupling')"></div>
+        <div class="touch-zone" style="left:15px;top:38px;width:190px;height:56px;" onpointerdown="openZone('trailer')"></div>
+        <div class="touch-zone" style="left:20px;top:98px;width:120px;height:24px;" onpointerdown="openZone('trailertires')"></div>
+        <div class="touch-zone" style="left:4px;top:74px;width:14px;height:28px;" onpointerdown="openZone('rear')"></div>
+      </div>
+    </div>
+
+    <div id="zone-panel">
+      <div id="zone-panel-title">
+        <span class="zone-title-icon">👆</span>
+        <span id="zone-panel-title-text">TAP A ZONE ON THE TRUCK TO BEGIN</span>
+ <span id="zone-feedback">WRONG ITEM</span>
+      </div>
+      <div id="zone-items-list"></div>
+    </div>
+
+    <div id="pretrip-footer">
+      <div id="pretrip-footer-info">
+        Zone: <span id="footer-zone-name">—</span> &nbsp;|&nbsp;
+        Checked: <span id="footer-checked">0</span> / <span id="footer-total">0</span>
+ &nbsp;|&nbsp; Section: <span id="footer-zone-checked">0</span> / <span id="footer-zone-total">0</span>
+      </div>
+      <div id="pretrip-footer-actions">
+        <div id="btn-skip-inspection" onpointerdown="skipInspection()">⏭ SKIP</div>
+        <div id="btn-finish-inspection" onpointerdown="finishInspection()">✅ COMPLETE INSPECTION</div>
+      </div>
+    </div>
+
+    <div id="pretrip-complete">
+      <div id="complete-icon">✅</div>
+      <div id="complete-title">PRE-TRIP INSPECTION COMPLETE</div>
+      <div id="complete-sub">All systems checked. Safe to operate.</div>
+      <div id="complete-stats">
+        <div class="stat-row"><span class="stat-label">Items Inspected</span><span class="stat-val" id="cs-items">0</span></div>
+        <div class="stat-row"><span class="stat-label">Zones Completed</span><span class="stat-val" id="cs-zones">0 / 0</span></div>
+        <div class="stat-row"><span class="stat-label">Inspection Time</span><span class="stat-val" id="cs-time">0:00</span></div>
+        <div class="stat-row"><span class="stat-label">Status</span><span class="stat-val" style="color:#00ff88;">PASSED ✔</span></div>
+      </div>
+      <div id="btn-begin-drive" onpointerdown="beginDrive()">🚛 BEGIN DRIVE</div>
+    </div>
+  </div>
+
+  <script>
+    /* ── MODULE NAV WIRING ───────────────────────────────────────── */
+    (function(){
+      const modules = [
+        { file: "airbrake.html",       name: "Air Brakes" },
+        { file: "component_test.html", name: "Components" },
+        { file: "pretrip.html",        name: "Pre-Trip" },
+        { file: "drive.html",          name: "Drive" }
+      ];
+
+      const cur = location.pathname.split("/").pop() || "index.html";
+      const idx = modules.findIndex(m => m.file.toLowerCase() === cur.toLowerCase());
+
+      const nav = document.getElementById("moduleNav");
+      if (idx < 0) { if (nav) nav.style.display = "none"; return; }
+
+      const titleEl = document.getElementById("moduleNavTitle");
+      if (titleEl) titleEl.textContent = modules[idx].name;
+
+      const prev = modules[idx - 1];
+      const next = modules[idx + 1];
+
+      const btnPrev = document.getElementById("btnPrev");
+      const btnNext = document.getElementById("btnNext");
+
+      if (btnPrev) {
+        if (prev) btnPrev.onclick = () => location.href = prev.file;
+        else { btnPrev.disabled = true; btnPrev.style.opacity = "0.45"; btnPrev.style.cursor = "not-allowed"; }
+      }
+      if (btnNext) {
+        if (next) btnNext.onclick = () => location.href = next.file;
+        else { btnNext.disabled = true; btnNext.style.opacity = "0.45"; btnNext.style.cursor = "not-allowed"; }
+      }
+    })();
+
+    (function () {
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1020 260'>
+        <defs>
+          <linearGradient id='trailerYellow' x1='0' y1='0' x2='0' y2='1'>
+            <stop offset='0' stop-color='%23ffe44d'/>
+            <stop offset='0.45' stop-color='%23f4cf12'/>
+            <stop offset='1' stop-color='%23ddb400'/>
+          </linearGradient>
+          <linearGradient id='cabYellow' x1='0' y1='0' x2='0' y2='1'>
+            <stop offset='0' stop-color='%23ffe763'/>
+            <stop offset='0.5' stop-color='%23f1cb0f'/>
+            <stop offset='1' stop-color='%23cb9f00'/>
+          </linearGradient>
+          <linearGradient id='chrome' x1='0' y1='0' x2='1' y2='0'>
+            <stop offset='0' stop-color='%23a4a4a4'/>
+            <stop offset='0.22' stop-color='%23f9f9f9'/>
+            <stop offset='0.5' stop-color='%23c6c6c6'/>
+            <stop offset='0.78' stop-color='%23f3f3f3'/>
+            <stop offset='1' stop-color='%23939393'/>
+          </linearGradient>
+          <linearGradient id='tire' x1='0' y1='0' x2='0' y2='1'>
+            <stop offset='0' stop-color='%23262626'/>
+            <stop offset='1' stop-color='%230f0f0f'/>
+          </linearGradient>
+          <radialGradient id='rim' cx='50%' cy='45%' r='55%'>
+            <stop offset='0' stop-color='%23e7e7e7'/>
+            <stop offset='1' stop-color='%235a5a5a'/>
+          </radialGradient>
+        </defs>
+
+        <rect width='1020' height='260' fill='%23f2f2f2'/>
+        <ellipse cx='510' cy='224' rx='470' ry='13' fill='rgba(0,0,0,.18)'/>
+
+        <rect x='35' y='82' width='612' height='110' fill='url(%23trailerYellow)' stroke='%23c9a700' stroke-width='2.5'/>
+        <rect x='35' y='82' width='612' height='7' fill='%23e0bc00'/>
+        <rect x='640' y='181' width='20' height='10' fill='%23232323'/>
+        <rect x='390' y='191' width='270' height='10' fill='%23242424'/>
+        <rect x='512' y='201' width='4' height='15' fill='%23303030'/>
+
+        <g>
+          <circle cx='150' cy='207' r='29' fill='url(%23tire)'/>
+          <circle cx='150' cy='207' r='14' fill='url(%23rim)'/>
+          <circle cx='208' cy='207' r='29' fill='url(%23tire)'/>
+          <circle cx='208' cy='207' r='14' fill='url(%23rim)'/>
+          <circle cx='266' cy='207' r='29' fill='url(%23tire)'/>
+          <circle cx='266' cy='207' r='14' fill='url(%23rim)'/>
+        </g>
+
+        <g>
+          <rect x='666' y='82' width='92' height='107' rx='8' fill='url(%23cabYellow)' stroke='%23b59100' stroke-width='2.5'/>
+          <path d='M758 110 L842 117 L914 142 L914 189 L758 189 Z' fill='url(%23cabYellow)' stroke='%23b59100' stroke-width='2.5'/>
+          <rect x='686' y='108' width='34' height='36' rx='4' fill='%23262626'/>
+          <path d='M771 124 L836 127 L870 139 L870 162 L771 162 Z' fill='%238cb3d9'/>
+          <rect x='824' y='69' width='8' height='56' fill='%235f5f5f'/>
+          <rect x='838' y='67' width='8' height='58' fill='%235f5f5f'/>
+          <rect x='664' y='188' width='252' height='14' fill='url(%23chrome)'/>
+          <rect x='664' y='202' width='252' height='4' fill='%23929292'/>
+          <path d='M884 189 L913 189 L934 178 L934 162 L914 162 Z' fill='url(%23cabYellow)' stroke='%23b59100' stroke-width='2'/>
+          <rect x='934' y='162' width='10' height='6' rx='2' fill='%23ffd85a'/>
+          <rect x='934' y='171' width='10' height='6' rx='2' fill='%23ffd85a'/>
+        </g>
+
+        <g>
+          <circle cx='721' cy='207' r='27' fill='url(%23tire)'/>
+          <circle cx='721' cy='207' r='13' fill='url(%23rim)'/>
+          <circle cx='787' cy='207' r='27' fill='url(%23tire)'/>
+          <circle cx='787' cy='207' r='13' fill='url(%23rim)'/>
+          <circle cx='894' cy='207' r='30' fill='url(%23tire)'/>
+          <circle cx='894' cy='207' r='15' fill='url(%23rim)'/>
+        </g>
+      </svg>`;
+      document.getElementById('truck-image').src = "data:image/svg+xml;charset=UTF-8," + svg;
+    })();
+
+    const ZONES = [
+      { id:'front', label:'Front End / Hood', icon:'💡', items:[
+        { name:'Headlights (Low Beam)', desc:'Both operational, lenses clean, not cracked' },
+        { name:'Headlights (High Beam)', desc:'Both operational and indicator works' },
+        { name:'Front Turn Signals', desc:'Left and right flash properly' },
+        { name:'Clearance / Marker Lights', desc:'All front markers working' },
+        { name:'Hazard Lights', desc:'Both sides flash with hazards on' },
+        { name:'Horn (City & Air)', desc:'Both horns operational' },
+        { name:'Windshield & Wipers', desc:'No major cracks, blades intact, washer works' },
+        { name:'Mirrors (Front View Check)', desc:'Secure, clean, adjusted' },
+        { name:'Front Bumper', desc:'Secure, no major damage' },
+        { name:'Hood Latch', desc:'Latch closes and secures correctly' },
+        { name:'Steering Linkage', desc:'No loose/bent components' },
+        { name:'Front Axle', desc:'No cracks or bends' },
+        { name:'Front Suspension', desc:'No broken springs/shocks/leaks' },
+        { name:'Front Brake Components', desc:'No air leaks, drum/rotor normal' },
+        { name:'Front Tire Tread', desc:'Minimum 4/32 in steer tires' },
+        { name:'Front Tire Inflation', desc:'Proper PSI, no low tire' },
+        { name:'Front Wheel / Lug Nuts', desc:'No missing lugs, no rust streaks' },
+        { name:'Wheel Seal', desc:'No grease/oil leak on inside rim' }
+      ]},
+      { id:'cab', label:'Cab Interior', icon:'🪑', items:[
+        { name:'Seat & Seatbelt', desc:'Adjusts/locks, belt latches and retracts' },
+        { name:'Parking Brake Test', desc:'Truck should not move with brake set' },
+        { name:'Service Brake Test', desc:'Vehicle stops straight and firm' },
+        { name:'Air Pressure Build', desc:'Builds to governor cut-out range' },
+        { name:'Air Leak Test', desc:'Leak rate within legal limit' },
+        { name:'Low Air Warning', desc:'Warning activates at low pressure' },
+        { name:'Emergency Spring Brake Pop-Out', desc:'Pops at low pressure range' },
+        { name:'Gauges', desc:'Oil, temp, volts, air gauges normal' },
+        { name:'Steering Play', desc:'No excessive free play' },
+        { name:'Defroster/Heater', desc:'Both operate correctly' },
+        { subheader: '🧯 Emergency Equipment' },
+        { name:'Fire Extinguisher', desc:'Charged (needle in green), Class B&C rated, secured in mount, current inspection tag' },
+        { name:'Warning Triangles (×3)', desc:'All 3 red reflective triangles present, undamaged, stored in case' },
+        { name:'Spare Electrical Fuses', desc:'One spare fuse for each type used on the vehicle (if no circuit breakers)' },
+        { name:'Documents', desc:'Registration, insurance, permits, logbook/ELD available & current' }
+      ]},
+      { id:'fuel', label:'Fuel / Side of Tractor', icon:'⛽', items:[
+        { name:'Fuel Tank Mounts', desc:'Secure straps/brackets' },
+        { name:'Fuel Cap', desc:'Tight and seal intact' },
+        { name:'Fuel Leaks', desc:'No smell or visible leaks' },
+        { name:'DEF Level/Cap', desc:'Adequate DEF, cap secure if equipped' },
+        { name:'Steps & Grab Handles', desc:'Secure and not damaged' },
+        { name:'Frame Rails', desc:'No cracks/bends/illegal welds' }
+      ]},
+      { id:'drivetires', label:'Drive Tires / Tractor Rear', icon:'🛞', items:[
+        { name:'Drive Tire Tread', desc:'Minimum 2/32 on drive tires' },
+        { name:'Drive Tire Inflation', desc:'Proper PSI all duals' },
+        { name:'Dual Spacing', desc:'No objects wedged between duals' },
+        { name:'Drive Wheel Lugs', desc:'All present and tight' },
+        { name:'Brake Drums / Rotors', desc:'No cracks, no severe wear' },
+        { name:'Slack Adjusters', desc:'Within adjustment limits' },
+        { name:'Brake Chambers & Hoses', desc:'No leaks, damage, or rubbing' },
+        { name:'Suspension', desc:'Airbags/springs/shocks secure and intact' },
+        { name:'Mudflaps', desc:'Present and secure' }
+      ]},
+      { id:'coupling', label:'Coupling / Fifth Wheel', icon:'🔗', items:[
+        { name:'Fifth Wheel Plate', desc:'Greased, no cracks, properly mounted to frame' },
+        { name:'Kingpin & Apron', desc:'No damage, trailer apron seated flat on fifth wheel' },
+        { name:'Locking Jaws', desc:'Fully closed around kingpin — no gap visible' },
+        { name:'Release Handle & Safety Latch', desc:'Handle in locked position, safety latch/pin secured' },
+        { name:'Air Lines', desc:'Service (blue) & emergency (red) gladhands connected, no leaks or chafing' },
+        { name:'Electrical Cable', desc:'7-pin connected, cord not dragging, no broken pins' },
+        { name:'Landing Gear', desc:'Fully raised, crank handle stowed, no bent legs' },
+        { subheader: '🔒 Tug Test — Coupling Security' },
+        { name:'Step 1 – Build Air Pressure', desc:'Air pressure at governor cut-out (≈120 psi) before proceeding' },
+        { name:'Step 2 – Release Trailer Brake', desc:'Push in trailer supply valve (red knob) to charge trailer brakes' },
+        { name:'Step 3 – Apply Tractor Parking Brake', desc:'Pull out tractor parking brake (yellow knob) — hold tractor firm' },
+        { name:'Step 4 – Attempt Forward Pull', desc:'Engage low gear and gently pull forward — trailer must NOT move. Confirms jaws locked on kingpin.' },
+        { name:'Step 5 – Release Tractor Brake, Apply Trailer Brake', desc:'Push in tractor brake, pull out trailer supply valve (red) to lock only trailer. Gently pull — tractor should move, trailer stays.' },
+        { name:'Step 6 – Inspect Under Trailer', desc:'Visually confirm kingpin seated, no separation gap between apron and fifth wheel plate' },
+        { name:'Step 7 – Reset Both Brakes to Normal', desc:'Both brake valves in correct operating position before moving' }
+      ]},
+      { id:'trailer', label:'Trailer Body', icon:'📦', items:[
+        { name:'Trailer Walls/Roof/Floor', desc:'No major damage or holes' },
+        { name:'Cargo Securement', desc:'Load blocked/braced/tied down correctly' },
+        { name:'Tie-downs / Straps / Chains', desc:'Not frayed or damaged' },
+        { name:'Side Marker Lights', desc:'All marker lights working' },
+        { name:'Reflective Tape', desc:'Conspicuity tape present/visible' },
+        { name:'Frame/Cross Members', desc:'No cracks or structural damage' }
+      ]},
+      { id:'trailertires', label:'Trailer Tires / Axles', icon:'🛞', items:[
+        { name:'Trailer Tire Tread', desc:'Minimum 2/32 tread depth' },
+        { name:'Trailer Tire Inflation', desc:'All trailer tires at proper PSI' },
+        { name:'Tire Condition', desc:'No cuts, bulges, exposed cords' },
+        { name:'Trailer Wheel Lugs', desc:'No missing/loose lug nuts' },
+        { name:'Trailer Axle Seals', desc:'No oil/grease leaks' },
+        { name:'Trailer Brake Components', desc:'No leaks/damage on chambers/hoses' },
+        { name:'Trailer Suspension', desc:'Springs/airbags/hangers intact' }
+      ]},
+      { id:'rear', label:'Rear of Trailer', icon:'🔴', items:[
+        { name:'Tail Lights', desc:'Both operational' },
+        { name:'Brake Lights', desc:'Illuminate with pedal' },
+        { name:'Rear Turn Signals', desc:'Both sides flash correctly' },
+        { name:'4-Way Flashers', desc:'Rear hazards function' },
+        { name:'Reverse Lights', desc:'Operate if equipped' },
+        { name:'Rear Reflectors', desc:'Present and clean' },
+        { name:'License Plate & Light', desc:'Secure and illuminated' },
+        { name:'Rear Doors / Latches', desc:'Secure and seal properly' },
+        { name:'Rear Impact Guard (DOT Bar)', desc:'Secure and not bent' }
+      ]}
+    ];
+
+    
+ // ── QUIZ POOLS ────────────────────────────────────────────────
+ const ALL_ITEMS = [];
+ const ZONE_ITEM_COUNTS = {}; // how many correct items per zone
+ ZONES.forEach((z) => {
+   let c = 0;
+   z.items.forEach((it) => {
+     if (it.subheader) return;
+     c++;
+     const uid = `${z.id}::${it.name}`;
+     ALL_ITEMS.push({ uid, zoneId: z.id, name: it.name, desc: it.desc });
+   });
+   ZONE_ITEM_COUNTS[z.id] = c;
+ });
+
+ // Global checked across the whole inspection
+ const checkedGlobal = new Set();
+
+ // Wrong selections in the CURRENT zone (stay red until a correct selection is made)
+ let wrongSet = new Set();
+
+ // Track visited zones for truck highlight
+ const zoneVisited = new Set();
+
+ function shuffleInPlace(arr) {
+   for (let i = arr.length - 1; i > 0; i--) {
+     const j = (Math.random() * (i + 1)) | 0;
+     [arr[i], arr[j]] = [arr[j], arr[i]];
+   }
+   return arr;
+ }
+
+ function showWrong(flag) {
+   const fb = document.getElementById('zone-feedback');
+   if (!fb) return;
+   if (flag) fb.classList.add('show');
+   else fb.classList.remove('show');
+ }
+
+ function clearWrongMarksInList() {
+   // Clear wrong highlights in the currently rendered list
+   document.querySelectorAll('.inspection-item.wrong').forEach(el => {
+     el.classList.remove('wrong');
+     const cb = el.querySelector('.item-checkbox');
+     if (cb && cb.textContent === '✖') cb.textContent = '';
+   });
+   wrongSet = new Set();
+   showWrong(false);
+ }
+
+ function updateZoneHighlights() {
+   const zones = document.querySelectorAll('.touch-zone');
+   zones.forEach((el) => {
+     const handler = (el.getAttribute('onpointerdown') || '');
+     el.classList.remove('active');
+     el.classList.remove('worked');
+     if (currentZoneId && handler.includes(`openZone('${currentZoneId}')`)) el.classList.add('active');
+     for (const zid of zoneVisited) {
+       if (handler.includes(`openZone('${zid}')`)) el.classList.add('worked');
+     }
+   });
+ }
+
+ function getZoneChecked(zoneId) {
+   let checked = 0;
+   for (const uid of checkedGlobal) {
+     if (uid.startsWith(zoneId + '::')) checked++;
+   }
+   return checked;
+ }
+
+ function updateSectionCountsUI(zoneId) {
+   const zTotal = document.getElementById('footer-zone-total');
+   const zChecked = document.getElementById('footer-zone-checked');
+   if (zTotal) zTotal.textContent = (ZONE_ITEM_COUNTS[zoneId] || 0);
+   if (zChecked) zChecked.textContent = getZoneChecked(zoneId);
+ }
+
+ function zoneComplete(zoneId) {
+   return getZoneChecked(zoneId) >= (ZONE_ITEM_COUNTS[zoneId] || 0);
+ }
+
+ function openNextZone() {
+   const idx = ZONES.findIndex(z => z.id === currentZoneId);
+   const next = ZONES[(idx + 1) % ZONES.length];
+   if (next) openZone(next.id);
+ }
+
+const pretripState = {};
+    ZONES.forEach(z => {
+      pretripState[z.id] = z.items.map(item => item.subheader ? null : false);
+    });
+
+    let currentZoneId = null;
+    const inspectionStartTime = Date.now();
+
+    function getTotalItems() {
+ return ALL_ITEMS.length;
+ }
+ function getTotalChecked() {
+ return checkedGlobal.size;
+ }
+ function updatePretripProgress() {
+      const total   = getTotalItems();
+      const checked = getTotalChecked();
+      const pct     = total ? (checked / total) * 100 : 0;
+      document.getElementById('pretrip-progress-bar').style.width = pct + '%';
+      document.getElementById('pretrip-progress-count').textContent = `${checked} / ${total} items`;
+      document.getElementById('footer-checked').textContent = checked;
+      document.getElementById('footer-total').textContent = total;
+      const fin = document.getElementById('btn-finish-inspection');
+      if (checked === total) {
+        fin.classList.add('enabled');
+        fin.textContent = '✅ COMPLETE INSPECTION';
+      } else {
+        fin.classList.remove('enabled');
+        fin.textContent = `✅ COMPLETE INSPECTION (${total - checked} left)`;
+      }
+    }
+
+    function openZone(zoneId) {
+ currentZoneId = zoneId;
+ zoneVisited.add(zoneId);
+ wrongSet = new Set();
+ showWrong(false);
+ const zone = ZONES.find(z => z.id === zoneId);
+ if (!zone) return;
+
+ // Show per-section counts in title and footer
+ const zc = getZoneChecked(zoneId);
+ const zt = (ZONE_ITEM_COUNTS[zoneId] || 0);
+ document.getElementById('zone-panel-title-text').textContent = `${zone.icon} ${zone.label.toUpperCase()} (${zc} / ${zt})`;
+ document.getElementById('footer-zone-name').textContent = `${zone.icon} ${zone.label}`;
+ updateSectionCountsUI(zoneId);
+
+ const list = document.getElementById('zone-items-list');
+ list.innerHTML = '';
+
+ // Remaining items across all zones, shuffled
+ const remaining = ALL_ITEMS.filter(it => !checkedGlobal.has(it.uid));
+ shuffleInPlace(remaining);
+
+ remaining.forEach((item) => {
+   const div = document.createElement('div');
+   div.className = 'inspection-item';
+   div.dataset.uid = item.uid;
+   div.dataset.zone = item.zoneId;
+   div.innerHTML = `
+     <div class="item-checkbox"></div>
+     <div class="item-text">
+       <div class="item-name">${item.name}</div>
+       <div class="item-desc">${item.desc}</div>
+     </div>
+   `;
+
+   div.addEventListener('pointerdown', (e) => {
+     e.stopPropagation();
+     handleSelection(item, div);
+   });
+
+   list.appendChild(div);
+ });
+
+ document.getElementById('zone-panel').scrollTop = 0;
+ updatePretripProgress();
+ updateZoneHighlights();
+}
+
+function handleSelection(item, div) {
+ // WRONG if item doesn't belong to the current truck section
+ if (item.zoneId !== currentZoneId) {
+   wrongSet.add(item.uid);
+   div.classList.add('wrong');
+   div.querySelector('.item-checkbox').textContent = '✖';
+   showWrong(true);
+   // stay red until a correct selection is made in this zone
+   return;
+ }
+
+ // Correct selection clears wrong marks for this zone ("corrected")
+ if (wrongSet.size) clearWrongMarksInList();
+
+ checkedGlobal.add(item.uid);
+ if (div && div.remove) div.remove();
+
+ // Update counts
+ updateSectionCountsUI(currentZoneId);
+ const zone = ZONES.find(z => z.id === currentZoneId);
+ const zc = getZoneChecked(currentZoneId);
+ const zt = (ZONE_ITEM_COUNTS[currentZoneId] || 0);
+ if (zone) document.getElementById('zone-panel-title-text').textContent = `${zone.icon} ${zone.label.toUpperCase()} (${zc} / ${zt})`;
+
+ updatePretripProgress();
+ updateZoneHighlights();
+
+ // If this zone is now complete, automatically advance to next zone
+ if (zoneComplete(currentZoneId)) {
+   openNextZone();
+ }
+}
+
+function finishInspection() {
+      const total   = getTotalItems();
+      const checked = getTotalChecked();
+      if (checked < total) return;
+      const elapsed = Math.floor((Date.now() - inspectionStartTime) / 1000);
+      const mins    = Math.floor(elapsed / 60);
+      const secs    = elapsed % 60;
+      document.getElementById('cs-items').textContent  = checked;
+      document.getElementById('cs-zones').textContent  = ZONES.length + ' / ' + ZONES.length;
+      document.getElementById('cs-time').textContent   = mins + ':' + String(secs).padStart(2, '0');
+      document.getElementById('pretrip-complete').classList.add('show');
+    }
+
+    const canvas = document.getElementById("gameCanvas");
+    const ctx    = canvas.getContext("2d");
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const training = {
+      active: false,
+      world: { width: 5000, height: 3500, roadWidth: 260 },
+      camera: { x: 0, y: 0 },
+      truck: { x: 700, y: 900, angle: 0, speed: 0, steer: 0, w: 292.5, h: 67.5, maxFwd: 4.2, maxRev: -2.2, accel: 0.06, brake: 0.09, friction: 0.985 },
+      trailer: { x: 200, y: 900, angle: 0, w: 596.25, h: 67.5 },
+      headlights: false,
+      roads: [],
+      streetLights: [],
+      leverInput: 0,
+      reverseHeld: false,
+      coachStage: 0
+    };
+
+    function setupTrainingWorld() {
+      training.roads = [
+        { x: 0,    y: 700,  w: training.world.width,  h: training.world.roadWidth },
+        { x: 0,    y: 1700, w: training.world.width,  h: training.world.roadWidth },
+        { x: 600,  y: 0,    w: training.world.roadWidth, h: training.world.height },
+        { x: 2200, y: 0,    w: training.world.roadWidth, h: training.world.height },
+        { x: 3800, y: 0,    w: training.world.roadWidth, h: training.world.height }
+      ];
+      training.streetLights = [];
+      for (let i = 0; i < 20; i++) {
+        training.streetLights.push({ x: 550 + i * 220, y: 640 });
+        training.streetLights.push({ x: 550 + i * 220, y: 1030 });
+        training.streetLights.push({ x: 550 + i * 220, y: 1640 });
+        training.streetLights.push({ x: 550 + i * 220, y: 2030 });
+      }
+      for (let i = 0; i < 14; i++) {
+        training.streetLights.push({ x: 540,  y: 150 + i * 230 });
+        training.streetLights.push({ x: 930,  y: 150 + i * 230 });
+        training.streetLights.push({ x: 2140, y: 150 + i * 230 });
+        training.streetLights.push({ x: 2530, y: 150 + i * 230 });
+        training.streetLights.push({ x: 3740, y: 150 + i * 230 });
+        training.streetLights.push({ x: 4130, y: 150 + i * 230 });
+      }
+    }
+
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+    const leverWrap = document.getElementById('lever-wrap');
+    const leverBall = document.getElementById('lever-ball');
+    let leverDragging = false;
+
+    function setLeverFromClientX(clientX) {
+      const rect   = leverWrap.getBoundingClientRect();
+      const usable = rect.width - 58;
+      let x = clientX - rect.left - 29;
+      x = clamp(x, 0, usable);
+      const pct = usable ? (x / usable) : 0.5;
+      training.leverInput = (pct * 2) - 1;
+      leverBall.style.left = `${(x + 29)}px`;
+    }
+
+    leverBall.addEventListener('pointerdown', (e) => {
+      if (!training.active) return;
+      leverDragging = true;
+      leverBall.setPointerCapture(e.pointerId);
+      setLeverFromClientX(e.clientX);
+      e.preventDefault();
+    });
+    leverBall.addEventListener('pointermove', (e) => {
+      if (!training.active || !leverDragging) return;
+      setLeverFromClientX(e.clientX);
+      e.preventDefault();
+    });
+    leverBall.addEventListener('pointerup', (e) => {
+      leverDragging = false;
+      training.leverInput = 0;
+      leverBall.style.left = "50%";
+      e.preventDefault();
+    });
+    leverBall.addEventListener('pointercancel', () => {
+      leverDragging = false;
+      training.leverInput = 0;
+      leverBall.style.left = "50%";
+    });
+
+    const reverseBtn = document.getElementById('reverse-btn');
+    reverseBtn.addEventListener('pointerdown', (e) => {
+      if (!training.active) return;
+      training.reverseHeld = true;
+      reverseBtn.classList.add('active');
+      reverseBtn.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    reverseBtn.addEventListener('pointerup', (e) => {
+      training.reverseHeld = false;
+      reverseBtn.classList.remove('active');
+      e.preventDefault();
+    });
+    reverseBtn.addEventListener('pointercancel', () => {
+      training.reverseHeld = false;
+      reverseBtn.classList.remove('active');
+    });
+
+    function drawRoadNetwork() {
+      ctx.fillStyle = "#2d613e";
+      ctx.fillRect(0, 0, training.world.width, training.world.height);
+      ctx.fillStyle = "#3a3a3a";
+      training.roads.forEach(r => ctx.fillRect(r.x, r.y, r.w, r.h));
+      ctx.strokeStyle = "#ffd54a";
+      ctx.lineWidth = 4;
+      training.roads.forEach(r => {
+        ctx.beginPath();
+        ctx.setLineDash([28, 24]);
+        if (r.w > r.h) {
+          ctx.moveTo(r.x, r.y + r.h / 2);
+          ctx.lineTo(r.x + r.w, r.y + r.h / 2);
+        } else {
+          ctx.moveTo(r.x + r.w / 2, r.y);
+          ctx.lineTo(r.x + r.w / 2, r.y + r.h);
+        }
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+    }
+
+    function drawStreetLights() {
+      training.streetLights.forEach(l => {
+        ctx.fillStyle = "#666";
+        ctx.fillRect(l.x - 3, l.y - 42, 6, 42);
+        ctx.fillStyle = "#999";
+        ctx.fillRect(l.x - 3, l.y - 42, 16, 4);
+        if (training.headlights) {
+          const glow = ctx.createRadialGradient(l.x + 13, l.y - 40, 2, l.x + 13, l.y - 40, 35);
+          glow.addColorStop(0, "rgba(255,230,130,0.55)");
+          glow.addColorStop(1, "rgba(255,230,130,0)");
+          ctx.fillStyle = glow;
+          ctx.beginPath();
+          ctx.arc(l.x + 13, l.y - 40, 35, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#ffec99";
+        } else {
+          ctx.fillStyle = "#4f4f4f";
+        }
+        ctx.beginPath();
+        ctx.arc(l.x + 13, l.y - 40, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawTruck() {
+      const truck = training.truck;
+      ctx.save();
+      ctx.translate(truck.x, truck.y);
+      ctx.rotate(truck.angle);
+      const s = 2.25;
+      ctx.fillStyle = "#111";
+      ctx.fillRect((-130 * s) / 2, (-30 * s) / 6, (130 * s) - (50 * s), (30 * s) / 3);
+      ctx.fillRect(0, (-30 * s) / 2, 60 * s, 30 * s);
+      ctx.fillStyle = "#000";
+      ctx.fillRect(-62 * s, -12 * s, 12 * s, 6 * s);
+      ctx.fillRect(-62 * s,   6 * s, 12 * s, 6 * s);
+      ctx.fillRect(-45 * s, -12 * s, 12 * s, 6 * s);
+      ctx.fillRect(-45 * s,   6 * s, 12 * s, 6 * s);
+      ctx.fillRect( 40 * s, (-30 * s) / 2 - 2, 12 * s, 5 * s);
+      ctx.fillRect( 40 * s,  (30 * s) / 2 - 3, 12 * s, 5 * s);
+      ctx.fillStyle = "#800000";
+      ctx.fillRect(-10 * s, (-30 * s) / 2, 40 * s, 30 * s);
+      ctx.fillRect( 30 * s, (-30 * s) / 2 + 4 * s, 30 * s, (30 * s) - 8 * s);
+      ctx.fillStyle = "#FFD700";
+      for (let i = 0; i < 4; i++) {
+        const ly = (-30 * s) / 2 + 4 * s + (i * 6.5 * s);
+        ctx.fillRect(27 * s, ly, 3 * s, 3 * s);
+      }
+      ctx.fillStyle = "#777";
+      ctx.fillRect(-12 * s, (-30 * s) / 2 - 5 * s, 6 * s, 6 * s);
+      ctx.fillRect(-12 * s,  (30 * s) / 2 - 1 * s, 6 * s, 6 * s);
+      ctx.fillStyle = "#aaa";
+      ctx.fillRect(30 * s, (-30 * s) / 2 - 4 * s, 4 * s, 5 * s);
+      ctx.fillRect(30 * s,  (30 * s) / 2 - 1 * s, 4 * s, 5 * s);
+      if (training.headlights) {
+        const cone = ctx.createLinearGradient(58 * s, 0, 170 * s, 0);
+        cone.addColorStop(0, "rgba(255,245,180,0.4)");
+        cone.addColorStop(1, "rgba(255,245,180,0)");
+        ctx.fillStyle = cone;
+        ctx.beginPath();
+        ctx.moveTo(58 * s, -13 * s);
+        ctx.lineTo(170 * s, -33 * s);
+        ctx.lineTo(170 * s,  33 * s);
+        ctx.lineTo(58 * s,  13 * s);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawProfessionalTrailer() {
+      const trailer = training.trailer;
+      const tw = trailer.w, th = trailer.h;
+      ctx.save();
+      ctx.translate(trailer.x, trailer.y);
+      ctx.rotate(trailer.angle);
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.fillRect(-tw / 2 + 5, -th / 2 + 5, tw, th);
+      for (let i = -th / 2; i < th / 2; i += 7.5) {
+        ctx.fillStyle = (Math.floor(i / 7.5) % 2 === 0) ? "#5d4037" : "#4a352f";
+        ctx.fillRect(-tw / 2, i, tw, 7.5);
+      }
+      ctx.fillStyle = "#b0b0b0";
+      ctx.fillRect(-tw / 2, -th / 2, tw, 4);
+      ctx.fillRect(-tw / 2, th / 2 - 4, tw, 4);
+      for (let i = -tw / 2; i < tw / 2; i += 40) {
+        ctx.fillStyle = (Math.floor(i / 40) % 2 === 0) ? "#d32f2f" : "#ffffff";
+        ctx.fillRect(i, -th / 2 + 1, 20, 2);
+        ctx.fillRect(i, th / 2 - 3, 20, 2);
+      }
+      ctx.fillStyle = "#111";
+      ctx.strokeStyle = "#ffd700";
+      ctx.lineWidth = 2;
+      for (let i = -tw / 2 + 120; i < tw / 2 - 80; i += 110) {
+        ctx.fillRect(i, th / 2 - 6, 12, 8);
+        ctx.beginPath();
+        ctx.moveTo(i + 6, th / 2 - 4);
+        ctx.lineTo(i + 6, -th / 2 + 4);
+        ctx.stroke();
+      }
+      ctx.fillStyle = "#000";
+      ctx.fillRect(-tw / 2 + 80, -th / 2 - 4, 90, 4);
+      ctx.fillRect(-tw / 2 + 80, th / 2, 90, 4);
+      ctx.restore();
+    }
+
+    function updateCoachText() {
+      const spd   = Math.abs(training.truck.speed) * 9;
+      const steer = Math.abs(training.truck.steer);
+      const coach = document.getElementById('coach-text');
+      if (training.coachStage === 0) {
+        coach.textContent = "Instructor: Ease into the throttle. Keep the trailer straight.";
+        if (spd > 6) training.coachStage = 1;
+      } else if (training.coachStage === 1) {
+        coach.textContent = "Instructor: Good. Follow the center dashed line and hold your lane.";
+        if (training.truck.x > 1200) training.coachStage = 2;
+      } else if (training.coachStage === 2) {
+        coach.textContent = "Instructor: Prepare for a smooth left correction. Small steering, no jerks.";
+        if (steer > 0.12) training.coachStage = 3;
+      } else if (training.coachStage === 3) {
+        coach.textContent = "Instructor: Nice correction. Keep your speed controlled and scan ahead.";
+        if (training.truck.x > 2200) training.coachStage = 4;
+      } else {
+        coach.textContent = "Instructor: Great job. Stay centered and continue to the next block.";
+      }
+    }
+
+    function updateTraining(dt) {
+      const steerInput = training.leverInput;
+      const gasInput   = leverDragging ? 1 : 0;
+
+      training.truck.steer += steerInput * 0.03;
+      training.truck.steer *= 0.88;
+      training.truck.steer = clamp(training.truck.steer, -0.6, 0.6);
+
+      if (training.reverseHeld) {
+        training.truck.speed -= training.truck.brake;
+      } else if (gasInput > 0) {
+        training.truck.speed += training.truck.accel;
+      }
+
+      training.truck.speed *= training.truck.friction;
+      training.truck.speed = clamp(training.truck.speed, training.truck.maxRev, training.truck.maxFwd);
+
+      training.truck.angle += training.truck.steer * (training.truck.speed * 0.035);
+      training.truck.x += Math.cos(training.truck.angle) * training.truck.speed * 2.4;
+      training.truck.y += Math.sin(training.truck.angle) * training.truck.speed * 2.4;
+
+      training.truck.x = clamp(training.truck.x, 60, training.world.width  - 60);
+      training.truck.y = clamp(training.truck.y, 60, training.world.height - 60);
+
+      const pivotX = training.truck.x - Math.cos(training.truck.angle) * 101.25;
+      const pivotY = training.truck.y - Math.sin(training.truck.angle) * 101.25;
+      const dx = pivotX - training.trailer.x;
+      const dy = pivotY - training.trailer.y;
+      training.trailer.angle = Math.atan2(dy, dx);
+      training.trailer.x = pivotX - Math.cos(training.trailer.angle) * (training.trailer.w / 2 - 33.75);
+      training.trailer.y = pivotY - Math.sin(training.trailer.angle) * (training.trailer.w / 2 - 33.75);
+
+      const targetX = training.truck.x - canvas.width  * 0.50;
+      const targetY = training.truck.y - canvas.height * 0.50;
+      training.camera.x += (targetX - training.camera.x) * 0.08;
+      training.camera.y += (targetY - training.camera.y) * 0.08;
+
+      document.getElementById("speedReadout").textContent = Math.round(Math.abs(training.truck.speed) * 9);
+      document.getElementById("gearReadout").textContent  = training.truck.speed > 0.2 ? "D" : training.truck.speed < -0.2 ? "R" : "N";
+      document.getElementById("lightsReadout").textContent = training.headlights ? "ON" : "OFF";
+
+      updateCoachText();
+    }
+
+    let lastTs = performance.now();
+    function gameLoop(ts) {
+      const dt = (ts - lastTs) / 1000;
+      lastTs = ts;
+      if (training.active) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        updateTraining(dt);
+        ctx.save();
+        ctx.translate(-training.camera.x, -training.camera.y);
+        drawRoadNetwork();
+        drawStreetLights();
+        drawProfessionalTrailer();
+        drawTruck();
+        ctx.restore();
+      }
+      requestAnimationFrame(gameLoop);
+    }
+
+    function beginDrive()      { window.location.href = "drive.html"; }
+    function skipInspection()  { window.location.href = "drive.html"; }
+
+    window.addEventListener("keydown", (e) => {
+      if (!training.active) return;
+      if (e.key === "l" || e.key === "L") training.headlights = !training.headlights;
+      if (e.key === "r" || e.key === "R") training.reverseHeld = true;
+    });
+    window.addEventListener("keyup", (e) => {
+      if (!training.active) return;
+      if (e.key === "r" || e.key === "R") training.reverseHeld = false;
+    });
+
+    updatePretripProgress();
+
+ // Auto-open a section so the items list shows immediately
+ openZone('front');
+ updateZoneHighlights();
+
+ requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
